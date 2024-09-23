@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, validator, Field
 from datetime import datetime
+from enum import Enum as PyEnum
 
 
 class User(BaseModel):

@@ -1,9 +1,15 @@
 import datetime
 
-from sqlalchemy import Integer, Column, String, ForeignKey, DateTime
+from sqlalchemy import Integer, Column, String, ForeignKey, DateTime, Enum
 from sqlalchemy.orm import relationship
+from enum import Enum as PyEnum
 
 from db.engine import Base
+
+
+class Role(PyEnum):
+    admin = "admin"
+    user = "user"
 
 
 class DBUser(Base):
@@ -13,6 +19,7 @@ class DBUser(Base):
     email = Column(String, unique=True, nullable=False)
     username = Column(String(255), unique=True, nullable=False)
     password = Column(String, nullable=False)
+    role = Column(Enum(Role), nullable=False, default=Role.user)
 
     posts = relationship("DBPost", back_populates="user")
 

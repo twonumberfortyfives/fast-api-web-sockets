@@ -5,17 +5,16 @@ from sqlalchemy.orm import Session
 
 import crud
 import schemas
-from db.engine import SessionLocal
+from dependencies import get_db, require_role
+from db import models
+
 
 app = FastAPI()
 
 
-def get_db() -> Session:
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+@app.get("/admin-only", dependencies=[Depends(require_role(models.Role.admin))])
+def get_admin_end_point():
+    return {"message": "Welcome admin!"}
 
 
 @app.get("/")
