@@ -33,6 +33,11 @@ class UserLogin(BaseModel):
     password: str
 
 
+class UserTokenResponse(BaseModel):
+    access_token: str
+    token_type: str
+
+
 class Post(BaseModel):
     id: int
     topic: str

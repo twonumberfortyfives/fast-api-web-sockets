@@ -70,7 +70,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     return encoded_jwt
 
 
-def login_user(db: Session, user: schemas.UserLogin):
+def login_user(db: Session, user: schemas.UserLogin) -> schemas.UserTokenResponse:
     user_to_login = db.query(DBUser).filter(DBUser.email == user.email).first()
     if not user_to_login or not verify_password(user.password, user_to_login.password):
         raise HTTPException(status_code=400, detail="Incorrect email or password")
@@ -79,4 +79,6 @@ def login_user(db: Session, user: schemas.UserLogin):
     access_token = create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+
+    return schemas.UserTokenResponse(access_token=access_token, token_type="bearer")
+

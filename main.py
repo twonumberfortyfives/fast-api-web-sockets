@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 import crud
 import schemas
 from db.engine import SessionLocal
-from db.models import DBUser
 
 app = FastAPI()
 
@@ -38,6 +37,6 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     return crud.create_user(db=db, user=user)
 
 
-@app.post("/login", response_model=schemas.UserLogin)
-def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
+@app.post("/login", response_model=schemas.UserTokenResponse)
+def login(user: schemas.UserLogin, db: Session = Depends(get_db)) -> schemas.UserTokenResponse:
     return crud.login_user(db=db, user=user)
