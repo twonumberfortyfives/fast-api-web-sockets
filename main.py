@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 import crud
 import schemas
 from db.engine import SessionLocal
+from db.models import DBUser
 
 app = FastAPI()
 
@@ -35,3 +36,8 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     if db_email_validation:
         raise HTTPException(status_code=400, detail="Account with current email already exists!")
     return crud.create_user(db=db, user=user)
+
+
+@app.post("/login", response_model=schemas.UserLogin)
+def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
+    return crud.login_user(db=db, user=user)
