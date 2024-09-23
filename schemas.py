@@ -35,7 +35,12 @@ class UserLogin(BaseModel):
 
 class UserTokenResponse(BaseModel):
     access_token: str
-    token_type: str
+    refresh_token: str
+    token_type: str = "bearer"
+
+
+class RefreshToken(BaseModel):
+    refresh_token: str
 
 
 class Post(BaseModel):

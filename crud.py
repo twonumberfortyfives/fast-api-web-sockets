@@ -70,6 +70,12 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     return encoded_jwt
 
 
+def create_refresh_token(data: dict):
+    expire = datetime.utcnow() + timedelta(days=30)
+    data.update({"exp": expire})
+    return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
+
+
 def login_user(db: Session, user: schemas.UserLogin) -> schemas.UserTokenResponse:
     user_to_login = db.query(DBUser).filter(DBUser.email == user.email).first()
     if not user_to_login or not verify_password(user.password, user_to_login.password):
@@ -79,6 +85,6 @@ def login_user(db: Session, user: schemas.UserLogin) -> schemas.UserTokenRespons
     access_token = create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
+    refresh_token = create_refresh_token(data={"sub": user.email})
 
-    return schemas.UserTokenResponse(access_token=access_token, token_type="bearer")
-
+    return schemas.UserTokenResponse(access_token=access_token, refresh_token=refresh_token)

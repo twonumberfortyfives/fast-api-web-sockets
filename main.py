@@ -1,3 +1,4 @@
+import jwt
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -40,3 +41,21 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
 @app.post("/login", response_model=schemas.UserTokenResponse)
 def login(user: schemas.UserLogin, db: Session = Depends(get_db)) -> schemas.UserTokenResponse:
     return crud.login_user(db=db, user=user)
+
+
+@app.post("/refresh", response_model=schemas.UserTokenResponse)
+def refresh_token(user_refresh_token: schemas.RefreshToken):
+    try:
+        payload = jwt.decode(user_refresh_token.refresh_token, crud.SECRET_KEY, algorithms=[crud.ALGORITHM])
+        email = payload.get("sub")
+
+        if not email:
+            raise HTTPException(status_code=403, detail="Invalid refresh token")
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=403, detail="Refresh token has expired")
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=403, detail="Invalid refresh token")
+
+    new_access_token = crud.create_access_token(data={"sub": email})
+    new_refresh_token = crud.create_refresh_token(data={"sub": email})
+    return schemas.UserTokenResponse(access_token=new_access_token, refresh_token=new_refresh_token)
