@@ -1,5 +1,6 @@
 import jwt
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 import crud
@@ -27,7 +28,7 @@ def get_users(db: Session = Depends(get_db)):
     return crud.get_all_users(db)
 
 
-@app.post("/register", response_model=schemas.UserCreate)
+@app.post("/register")
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_username_validation = crud.get_user_by_username(db, user.username)
     if db_username_validation:
@@ -39,17 +40,23 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=400, detail="Account with current email already exists!"
         )
-    return crud.create_user(db=db, user=user)
+    user = crud.create_user(db=db, user=user)
+    response = JSONResponse({"message": f"{user.username} has been registered."})
+    return response
 
 
-@app.post("/login", response_model=schemas.UserTokenResponse)
-def login(
-    user: schemas.UserLogin, db: Session = Depends(get_db)
-) -> schemas.UserTokenResponse:
-    return crud.login_user(db=db, user=user)
+@app.post("/login")
+def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
+    user_tokens = crud.login_user(db=db, user=user)
+
+    response = JSONResponse(content={"message": "Login successful."}, status_code=200)
+    response.set_cookie(key="access_token", value=user_tokens.access_token, httponly=True, samesite="strict")
+    response.set_cookie(key="refresh_token", value=user_tokens.refresh_token, httponly=True, samesite="strict")
+
+    return response
 
 
-@app.post("/refresh", response_model=schemas.UserTokenResponse)
+@app.post("/refresh")
 def refresh_token(user_refresh_token: schemas.RefreshToken):
     try:
         payload = jwt.decode(
@@ -68,6 +75,13 @@ def refresh_token(user_refresh_token: schemas.RefreshToken):
 
     new_access_token = crud.create_access_token(data={"sub": email})
     new_refresh_token = crud.create_refresh_token(data={"sub": email})
-    return schemas.UserTokenResponse(
-        access_token=new_access_token, refresh_token=new_refresh_token
-    )
+    response = JSONResponse(status_code=200, content={"message": "Token updated."})
+    response.set_cookie(key="access_token", value=new_access_token, httponly=True, samesite="strict")
+    response.set_cookie(key="refresh_token", value=new_refresh_token, httponly=True, samesite="strict")
+    return response
+
+
+@app.get("/get-posts", response_model=list[schemas.Post])
+def get_all_posts(db: Session = Depends(get_db)):
+    return crud.get_all_posts(db)
+

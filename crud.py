@@ -4,7 +4,6 @@ import jwt
 from fastapi import HTTPException
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
-from starlette import status
 from dotenv import load_dotenv
 import os
 
@@ -86,3 +85,7 @@ def login_user(db: Session, user: schemas.UserLogin) -> schemas.UserTokenRespons
     return schemas.UserTokenResponse(
         access_token=access_token, refresh_token=refresh_token
     )
+
+
+def get_all_posts(db: Session):
+    return db.query(models.DBPost).all()

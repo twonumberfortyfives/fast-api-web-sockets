@@ -1,4 +1,6 @@
-from sqlalchemy import Integer, Column, String, ForeignKey
+import datetime
+
+from sqlalchemy import Integer, Column, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 
 from db.engine import Base
@@ -20,4 +22,5 @@ class DBPost(Base):
     topic = Column(String(255), nullable=True)
     content = Column(String(500), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
     user = relationship(DBUser)
