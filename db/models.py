@@ -14,6 +14,8 @@ class DBUser(Base):
     username = Column(String(255), unique=True, nullable=False)
     password = Column(String, nullable=False)
 
+    posts = relationship("DBPost", back_populates="user")
+
 
 class DBPost(Base):
     __tablename__ = "posts"
@@ -23,4 +25,5 @@ class DBPost(Base):
     content = Column(String(500), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    user = relationship(DBUser)
+    user = relationship("DBUser", back_populates="posts")
+
