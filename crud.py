@@ -75,7 +75,9 @@ def create_refresh_token(data: dict):
 
 
 def login_user(db: Session, user: schemas.UserLogin) -> schemas.UserTokenResponse:
-    user_to_login = db.query(models.DBUser).filter(models.DBUser.email == user.email).first()
+    user_to_login = (
+        db.query(models.DBUser).filter(models.DBUser.email == user.email).first()
+    )
     if not user_to_login or not verify_password(user.password, user_to_login.password):
         raise HTTPException(status_code=400, detail="Incorrect email or password")
 
@@ -97,7 +99,9 @@ def get_all_posts(db: Session):
 def create_post(db: Session, access_token, post: schemas.PostCreate):
     user = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
     user_email = user.get("sub")
-    user_id = (db.query(models.DBUser).filter(models.DBUser.email == user_email).first()).id
+    user_id = (
+        db.query(models.DBUser).filter(models.DBUser.email == user_email).first()
+    ).id
     new_post = models.DBPost(
         topic=post.topic,
         content=post.content,

@@ -109,7 +109,9 @@ def get_all_posts(db: Session = Depends(get_db)):
 
 
 @app.post("/create-post", response_model=schemas.Post)
-def create_post(request: Request, post: schemas.PostCreate, db: Session = Depends(get_db)):
+def create_post(
+    request: Request, post: schemas.PostCreate, db: Session = Depends(get_db)
+):
     access_token = request.cookies.get("access_token")
     response = crud.create_post(db=db, access_token=access_token, post=post)
     return response

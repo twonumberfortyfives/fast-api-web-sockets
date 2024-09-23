@@ -26,4 +26,3 @@ class DBPost(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     user = relationship("DBUser", back_populates="posts")
-
