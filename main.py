@@ -50,8 +50,18 @@ def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
     user_tokens = crud.login_user(db=db, user=user)
 
     response = JSONResponse(content={"message": "Login successful."}, status_code=200)
-    response.set_cookie(key="access_token", value=user_tokens.access_token, httponly=True, samesite="strict")
-    response.set_cookie(key="refresh_token", value=user_tokens.refresh_token, httponly=True, samesite="strict")
+    response.set_cookie(
+        key="access_token",
+        value=user_tokens.access_token,
+        httponly=True,
+        samesite="strict",
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=user_tokens.refresh_token,
+        httponly=True,
+        samesite="strict",
+    )
 
     return response
 
@@ -76,12 +86,15 @@ def refresh_token(user_refresh_token: schemas.RefreshToken):
     new_access_token = crud.create_access_token(data={"sub": email})
     new_refresh_token = crud.create_refresh_token(data={"sub": email})
     response = JSONResponse(status_code=200, content={"message": "Token updated."})
-    response.set_cookie(key="access_token", value=new_access_token, httponly=True, samesite="strict")
-    response.set_cookie(key="refresh_token", value=new_refresh_token, httponly=True, samesite="strict")
+    response.set_cookie(
+        key="access_token", value=new_access_token, httponly=True, samesite="strict"
+    )
+    response.set_cookie(
+        key="refresh_token", value=new_refresh_token, httponly=True, samesite="strict"
+    )
     return response
 
 
 @app.get("/get-posts", response_model=list[schemas.Post])
 def get_all_posts(db: Session = Depends(get_db)):
     return crud.get_all_posts(db)
-
