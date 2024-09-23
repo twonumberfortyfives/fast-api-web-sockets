@@ -26,15 +26,11 @@ def get_all_users(db: Session):
 
 
 def get_user_by_username(db: Session, username: str):
-    return (
-        db.query(models.DBUser).filter(models.DBUser.username == username).first()
-    )
+    return db.query(models.DBUser).filter(models.DBUser.username == username).first()
 
 
 def get_user_by_email(db: Session, email: str):
-    return (
-        db.query(models.DBUser).filter(models.DBUser.email == email).first()
-    )
+    return db.query(models.DBUser).filter(models.DBUser.email == email).first()
 
 
 def hash_password(password: str):
@@ -87,4 +83,6 @@ def login_user(db: Session, user: schemas.UserLogin) -> schemas.UserTokenRespons
     )
     refresh_token = create_refresh_token(data={"sub": user.email})
 
-    return schemas.UserTokenResponse(access_token=access_token, refresh_token=refresh_token)
+    return schemas.UserTokenResponse(
+        access_token=access_token, refresh_token=refresh_token
+    )

@@ -16,15 +16,17 @@ class UserCreate(BaseModel):
     @validator("password")
     def validate_password(cls, value):
         if len(value) < 8:
-            raise ValueError('Password must be at least 8 characters long')
+            raise ValueError("Password must be at least 8 characters long")
         if not any(char.isdigit() for char in value):
-            raise ValueError('Password must contain at least one digit')
+            raise ValueError("Password must contain at least one digit")
         if not any(char.isupper() for char in value):
-            raise ValueError('Password must contain at least one uppercase letter')
+            raise ValueError("Password must contain at least one uppercase letter")
         if not any(char.islower() for char in value):
-            raise ValueError('Password must contain at least one lowercase letter')
+            raise ValueError("Password must contain at least one lowercase letter")
         if not any(char in "!@#$%^&*()_+-=" for char in value):
-            raise ValueError('Password must contain at least one special character (!@#$%^&*()_+-=)')
+            raise ValueError(
+                "Password must contain at least one special character (!@#$%^&*()_+-=)"
+            )
         return value
 
 
