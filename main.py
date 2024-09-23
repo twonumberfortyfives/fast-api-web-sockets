@@ -1,5 +1,5 @@
 import jwt
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -23,9 +23,17 @@ def root():
     return {"message": "Hello World"}
 
 
-@app.get("/get-users", response_model=list[schemas.User])
+@app.get("/get-users", response_model=list[schemas.UserList])
 def get_users(db: Session = Depends(get_db)):
     return crud.get_all_users(db)
+
+
+@app.get("/get-users/{user_id}", response_model=schemas.UserList)
+def retrieve_user(user_id: int, db: Session = Depends(get_db)):
+    user = crud.retrieve_user(db=db, user_id=user_id)
+    if user:
+        return user
+    raise HTTPException(status_code=404, detail="User not found")
 
 
 @app.post("/register")
@@ -98,3 +106,10 @@ def refresh_token(user_refresh_token: schemas.RefreshToken):
 @app.get("/get-posts", response_model=list[schemas.Post])
 def get_all_posts(db: Session = Depends(get_db)):
     return crud.get_all_posts(db)
+
+
+@app.post("/create-post", response_model=schemas.Post)
+def create_post(request: Request, post: schemas.PostCreate, db: Session = Depends(get_db)):
+    access_token = request.cookies.get("access_token")
+    response = crud.create_post(db=db, access_token=access_token, post=post)
+    return response

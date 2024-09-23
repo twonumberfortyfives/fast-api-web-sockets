@@ -9,7 +9,6 @@ import os
 
 from db import models
 import schemas
-from db.models import DBUser
 
 load_dotenv()
 
@@ -22,6 +21,10 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 def get_all_users(db: Session):
     return db.query(models.DBUser).all()
+
+
+def retrieve_user(db: Session, user_id: int):
+    return db.query(models.DBUser).filter(models.DBUser.id == user_id).first()
 
 
 def get_user_by_username(db: Session, username: str):
@@ -72,7 +75,7 @@ def create_refresh_token(data: dict):
 
 
 def login_user(db: Session, user: schemas.UserLogin) -> schemas.UserTokenResponse:
-    user_to_login = db.query(DBUser).filter(DBUser.email == user.email).first()
+    user_to_login = db.query(models.DBUser).filter(models.DBUser.email == user.email).first()
     if not user_to_login or not verify_password(user.password, user_to_login.password):
         raise HTTPException(status_code=400, detail="Incorrect email or password")
 
@@ -89,3 +92,19 @@ def login_user(db: Session, user: schemas.UserLogin) -> schemas.UserTokenRespons
 
 def get_all_posts(db: Session):
     return db.query(models.DBPost).all()
+
+
+def create_post(db: Session, access_token, post: schemas.PostCreate):
+    user = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+    user_email = user.get("sub")
+    user_id = (db.query(models.DBUser).filter(models.DBUser.email == user_email).first()).id
+    new_post = models.DBPost(
+        topic=post.topic,
+        content=post.content,
+        created_at=post.created_at,
+        user_id=user_id,
+    )
+    db.add(new_post)
+    db.commit()
+    db.refresh(new_post)
+    return new_post

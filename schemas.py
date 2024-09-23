@@ -9,6 +9,12 @@ class User(BaseModel):
     password: str
 
 
+class UserList(BaseModel):
+    id: int
+    email: EmailStr
+    username: str
+
+
 class UserCreate(BaseModel):
     email: EmailStr
     username: str
@@ -52,3 +58,11 @@ class Post(BaseModel):
     content: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
     user_id: int
+
+
+class PostCreate(BaseModel):
+    topic: str
+    content: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    user_id: int
+
