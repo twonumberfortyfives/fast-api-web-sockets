@@ -67,3 +67,8 @@ class UserList(BaseModel):
     email: EmailStr
     username: str
     posts: list[Post] = []
+
+
+class UserEdit(BaseModel):
+    email: EmailStr
+    username: str

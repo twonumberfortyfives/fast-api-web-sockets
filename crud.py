@@ -2,6 +2,7 @@ from datetime import timedelta, datetime
 
 import jwt
 from fastapi import HTTPException
+from jose import JWTError
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
@@ -112,3 +113,30 @@ def create_post(db: Session, access_token, post: schemas.PostCreate):
     db.commit()
     db.refresh(new_post)
     return new_post
+
+
+def my_profile(access_token: str, user: schemas.UserEdit, db: Session):
+    try:
+        payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_email = payload.get("sub")
+
+        if user_email is None:
+            raise HTTPException(status_code=403, detail="Invalid token or user not found")
+
+        found_user = db.query(models.DBUser).filter(models.DBUser.email == user_email).first()
+
+        if found_user is None:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        found_user.username = user.username
+        found_user.email = user.email
+
+        db.commit()
+        db.refresh(found_user)
+
+        return found_user
+
+    except JWTError:
+        raise HTTPException(status_code=403, detail="Could not validate credentials")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

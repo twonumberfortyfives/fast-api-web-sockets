@@ -8,7 +8,6 @@ import schemas
 from dependencies import get_db, require_role
 from db import models
 
-
 app = FastAPI()
 
 
@@ -33,6 +32,13 @@ def retrieve_user(user_id: int, db: Session = Depends(get_db)):
     if user:
         return user
     raise HTTPException(status_code=404, detail="User not found")
+
+
+@app.put("/my-profile-full-edit", response_model=schemas.UserEdit)
+def my_profile(request: Request, user: schemas.UserEdit, db: Session = Depends(get_db)):
+    access_token = request.cookies.get("access_token")
+    user = crud.my_profile(access_token=access_token, user=user, db=db)
+    return user
 
 
 @app.post("/register")
@@ -109,7 +115,7 @@ def get_all_posts(db: Session = Depends(get_db)):
 
 @app.post("/create-post", response_model=schemas.Post)
 def create_post(
-    request: Request, post: schemas.PostCreate, db: Session = Depends(get_db)
+        request: Request, post: schemas.PostCreate, db: Session = Depends(get_db)
 ):
     access_token = request.cookies.get("access_token")
     response = crud.create_post(db=db, access_token=access_token, post=post)
