@@ -1,0 +1,134 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "email": "admin@example.com",
+      "username": "admin_user",
+      "password": "hashed_password_1",
+      "role": "admin",
+      "posts": [
+        {
+          "id": 1,
+          "topic": "Admin's First Post",
+          "content": "This is the content of the admin's first post.",
+          "created_at": "2024-09-23T12:00:00",
+          "user_id": 1
+        },
+        {
+          "id": 2,
+          "topic": "Admin's Second Post",
+          "content": "This is the content of the admin's second post.",
+          "created_at": "2024-09-24T13:00:00",
+          "user_id": 1
+        },
+        {
+          "id": 3,
+          "topic": "Admin's Third Post",
+          "content": "This is the content of the admin's third post.",
+          "created_at": "2024-09-25T14:00:00",
+          "user_id": 1
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "email": "user1@example.com",
+      "username": "regular_user_1",
+      "password": "hashed_password_2",
+      "role": "user",
+      "posts": [
+        {
+          "id": 4,
+          "topic": "First Post by User 1",
+          "content": "Content of the first post by user 1.",
+          "created_at": "2024-09-23T14:00:00",
+          "user_id": 2
+        },
+        {
+          "id": 5,
+          "topic": "Second Post by User 1",
+          "content": "Content of the second post by user 1.",
+          "created_at": "2024-09-24T15:00:00",
+          "user_id": 2
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "email": "user2@example.com",
+      "username": "regular_user_2",
+      "password": "hashed_password_3",
+      "role": "user",
+      "posts": [
+        {
+          "id": 6,
+          "topic": "First Post by User 2",
+          "content": "Content of the first post by user 2.",
+          "created_at": "2024-09-23T16:00:00",
+          "user_id": 3
+        },
+        {
+          "id": 7,
+          "topic": "Second Post by User 2",
+          "content": "Content of the second post by user 2.",
+          "created_at": "2024-09-24T17:00:00",
+          "user_id": 3
+        },
+        {
+          "id": 8,
+          "topic": "Third Post by User 2",
+          "content": "Content of the third post by user 2.",
+          "created_at": "2024-09-25T18:00:00",
+          "user_id": 3
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "email": "user3@example.com",
+      "username": "regular_user_3",
+      "password": "hashed_password_4",
+      "role": "user",
+      "posts": []
+    },
+    {
+      "id": 5,
+      "email": "user4@example.com",
+      "username": "regular_user_4",
+      "password": "hashed_password_5",
+      "role": "user",
+      "posts": [
+        {
+          "id": 9,
+          "topic": "First Post by User 4",
+          "content": "Content of the first post by user 4.",
+          "created_at": "2024-09-26T19:00:00",
+          "user_id": 5
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "email": "user5@example.com",
+      "username": "regular_user_5",
+      "password": "hashed_password_6",
+      "role": "user",
+      "posts": [
+        {
+          "id": 10,
+          "topic": "First Post by User 5",
+          "content": "Content of the first post by user 5.",
+          "created_at": "2024-09-27T20:00:00",
+          "user_id": 6
+        },
+        {
+          "id": 11,
+          "topic": "Second Post by User 5",
+          "content": "Content of the second post by user 5.",
+          "created_at": "2024-09-28T21:00:00",
+          "user_id": 6
+        }
+      ]
+    }
+  ]
+}
