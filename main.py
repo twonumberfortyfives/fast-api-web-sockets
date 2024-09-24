@@ -22,6 +22,15 @@ app.add_middleware(
 )
 
 
+@app.get("/is-authenticated")
+def is_authenticated(request: Request, db: Session = Depends(get_db)):
+    access_token = request.cookies.get("access_token")
+    if access_token and crud.is_authenticated(access_token=access_token, db=db):
+        return JSONResponse(status_code=200, content={"is_authenticated": True})
+    else:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+
 @app.get("/admin-only", dependencies=[Depends(require_role(models.Role.admin))])
 def get_admin_end_point():
     return {"message": "Welcome admin!"}

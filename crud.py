@@ -97,12 +97,15 @@ def get_all_posts(db: Session):
     return db.query(models.DBPost).all()
 
 
+def get_user_model(access_token: str, db: Session):
+    payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+    user_email = payload.get("sub")
+    user_model = db.query(models.DBUser).filter(models.DBUser.email == user_email).first()
+    return user_model
+
+
 def create_post(db: Session, access_token, post: schemas.PostCreate):
-    user = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
-    user_email = user.get("sub")
-    user_id = (
-        db.query(models.DBUser).filter(models.DBUser.email == user_email).first()
-    ).id
+    user_id = (get_user_model(access_token=access_token, db=db)).id
     new_post = models.DBPost(
         topic=post.topic,
         content=post.content,
@@ -147,9 +150,7 @@ def my_profile(access_token: str, user: schemas.UserEdit, db: Session):
 
 
 def change_password(access_token, password: schemas.UserPasswordEdit, db: Session):
-    user_data = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
-    user_email = user_data.get("sub")
-    user = db.query(models.DBUser).filter(models.DBUser.email == user_email).first()
+    user = get_user_model(access_token=access_token, db=db)
     if verify_password(password.old_password, user.password) and user:
         new_hashed_password = hash_password(password.new_password)
         user.password = new_hashed_password
@@ -157,3 +158,24 @@ def change_password(access_token, password: schemas.UserPasswordEdit, db: Sessio
         db.refresh(user)
         return True
     return False
+
+
+def is_authenticated(access_token: str, db: Session):
+    if not access_token:
+        return False
+
+    try:
+        user_data = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_email = user_data.get("sub")
+
+        if not user_email:
+            return False
+
+        user = db.query(models.DBUser).filter(models.DBUser.email == user_email).first()
+        return user is not None
+
+    except jwt.ExpiredSignatureError:
+        return False
+    except jwt.PyJWTError:
+        return False
+
