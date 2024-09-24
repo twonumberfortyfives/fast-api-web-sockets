@@ -121,9 +121,13 @@ def my_profile(access_token: str, user: schemas.UserEdit, db: Session):
         user_email = payload.get("sub")
 
         if user_email is None:
-            raise HTTPException(status_code=403, detail="Invalid token or user not found")
+            raise HTTPException(
+                status_code=403, detail="Invalid token or user not found"
+            )
 
-        found_user = db.query(models.DBUser).filter(models.DBUser.email == user_email).first()
+        found_user = (
+            db.query(models.DBUser).filter(models.DBUser.email == user_email).first()
+        )
 
         if found_user is None:
             raise HTTPException(status_code=404, detail="User not found")

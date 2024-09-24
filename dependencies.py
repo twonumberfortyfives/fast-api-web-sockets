@@ -17,7 +17,7 @@ def get_db() -> Session:
 
 
 def get_current_user(request: Request, db: Session = Depends(get_db)):
-    access_token = request.cookies.get('access_token')
+    access_token = request.cookies.get("access_token")
     user_data = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
     user_email = user_data.get("sub")
     user = db.query(models.DBUser).filter(models.DBUser.email == user_email).first()
@@ -32,4 +32,5 @@ def require_role(required_role: Role):
                 detail="You are not allowed to perform this action",
             )
         return current_user
+
     return role_checker
