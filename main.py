@@ -2,6 +2,7 @@ import jwt
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
+from fastapi.middleware.cors import CORSMiddleware
 
 import crud
 import schemas
@@ -9,6 +10,20 @@ from dependencies import get_db, require_role
 from db import models
 
 app = FastAPI()
+
+
+origins = [
+    "http://127.0.0.1:5173",
+    "http://localhost:8000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/admin-only", dependencies=[Depends(require_role(models.Role.admin))])
@@ -34,11 +49,19 @@ def retrieve_user(user_id: int, db: Session = Depends(get_db)):
     raise HTTPException(status_code=404, detail="User not found")
 
 
-@app.put("/my-profile-full-edit", response_model=schemas.UserEdit)
+@app.put("/my-profile", response_model=schemas.UserEdit)
 def my_profile(request: Request, user: schemas.UserEdit, db: Session = Depends(get_db)):
     access_token = request.cookies.get("access_token")
     user = crud.my_profile(access_token=access_token, user=user, db=db)
     return user
+
+
+@app.patch("/my-profile/change-password")
+def change_password(request: Request, password: schemas.UserPasswordEdit, db: Session = Depends(get_db)):
+    access_token = request.cookies.get("access_token")
+    if crud.change_password(access_token=access_token, password=password, db=db):
+        return {"message": "Password changed successfully"}
+    raise HTTPException(status_code=401, detail="Invalid credentials")
 
 
 @app.post("/register")
