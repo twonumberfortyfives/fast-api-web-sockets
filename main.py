@@ -1,8 +1,9 @@
+from urllib import request
+
 import jwt
-from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi import FastAPI, Depends, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 
 import crud
@@ -122,6 +123,11 @@ async def login(user: schemas.UserLogin, db: AsyncSession = Depends(get_db)):
     )
 
     return response
+
+
+@app.post("/logout")
+async def logout(response: Response, request: Request):
+    return await crud.logout(response, request)
 
 
 @app.post("/refresh")

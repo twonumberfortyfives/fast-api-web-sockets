@@ -6,7 +6,7 @@ from jose import JWTError
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import Session
+from fastapi import Response, Request
 from dotenv import load_dotenv
 from sqlalchemy.orm import selectinload
 import os
@@ -130,6 +130,8 @@ async def get_all_posts(db: AsyncSession):
 
 
 async def get_user_model(access_token: str, db: AsyncSession):
+    if not access_token:
+        raise HTTPException(status_code=403, detail="Not Authorized")
     payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
     user_email = payload.get("sub")
     result = await db.execute(
@@ -140,6 +142,8 @@ async def get_user_model(access_token: str, db: AsyncSession):
 
 
 async def create_post(db: AsyncSession, access_token, post: schemas.PostCreate):
+    if not access_token:
+        raise HTTPException(status_code=403, detail="Not authorized")
     user_id = await get_user_model(access_token=access_token, db=db)
     new_post = models.DBPost(
         topic=post.topic,
@@ -155,13 +159,10 @@ async def create_post(db: AsyncSession, access_token, post: schemas.PostCreate):
 
 async def my_profile(access_token: str, user: schemas.UserEdit, db: AsyncSession):
     try:
+        if not access_token:
+            raise HTTPException(status_code=403, detail="Not authorized")
         payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
         user_email = payload.get("sub")
-
-        if user_email is None:
-            raise HTTPException(
-                status_code=403, detail="Invalid token or user not found"
-            )
 
         result = await db.execute(
             select(models.DBUser).filter(models.DBUser.email == user_email)
@@ -221,3 +222,17 @@ async def is_authenticated(access_token: str, db: AsyncSession):
         return False
     except jwt.PyJWTError:
         return False
+
+
+async def logout(response: Response, request: Request):
+    try:
+        access_token = request.cookies.get("access_token")
+        refresh_token = request.cookies.get("refresh_token")
+
+        if not access_token and not refresh_token:
+            raise HTTPException(status_code=400, detail="You are not authorized")
+        response.delete_cookie(key="access_token")
+        response.delete_cookie(key="refresh_token")
+        return {"message": "Logout successful"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
