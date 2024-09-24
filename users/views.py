@@ -12,7 +12,7 @@ from sqlalchemy.orm import selectinload
 import os
 
 from db import models
-import schemas
+from users import serializers
 
 load_dotenv()
 
@@ -59,6 +59,18 @@ async def get_user_by_email(db: AsyncSession, email: str):
     return user
 
 
+async def get_user_model(access_token: str, db: AsyncSession):
+    if not access_token:
+        raise HTTPException(status_code=403, detail="Not Authorized")
+    payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+    user_email = payload.get("sub")
+    result = await db.execute(
+        select(models.DBUser).filter(models.DBUser.email == user_email)
+    )
+    user_model = result.scalar_one_or_none()
+    return user_model
+
+
 async def hash_password(password: str):
     return pwd_context.hash(password)
 
@@ -67,7 +79,7 @@ async def verify_password(password: str, hashed_password: str):
     return pwd_context.verify(password, hashed_password)
 
 
-async def create_user(db: AsyncSession, user: schemas.UserCreate):
+async def create_user(db: AsyncSession, user: serializers.UserCreate):
     hashed_password = await hash_password(user.password)
     db_user = models.DBUser(
         email=user.email,
@@ -83,9 +95,9 @@ async def create_user(db: AsyncSession, user: schemas.UserCreate):
 async def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        expire = datetime.now() + timedelta(minutes=15)
 
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
@@ -93,14 +105,14 @@ async def create_access_token(data: dict, expires_delta: timedelta = None):
 
 
 async def create_refresh_token(data: dict):
-    expire = datetime.utcnow() + timedelta(days=30)
+    expire = datetime.now() + timedelta(days=30)
     data.update({"exp": expire})
     return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
 
 
 async def login_user(
-    db: AsyncSession, user: schemas.UserLogin
-) -> schemas.UserTokenResponse:
+    db: AsyncSession, user: serializers.UserLogin
+) -> serializers.UserTokenResponse:
     result = await db.execute(
         select(models.DBUser).filter(models.DBUser.email == user.email)
     )
@@ -118,46 +130,12 @@ async def login_user(
     )
     refresh_token = await create_refresh_token(data={"sub": user.email})
 
-    return schemas.UserTokenResponse(
+    return serializers.UserTokenResponse(
         access_token=access_token, refresh_token=refresh_token
     )
 
 
-async def get_all_posts(db: AsyncSession):
-    result = await db.execute(select(models.DBPost))
-    posts = result.scalars().all()
-    return posts
-
-
-async def get_user_model(access_token: str, db: AsyncSession):
-    if not access_token:
-        raise HTTPException(status_code=403, detail="Not Authorized")
-    payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
-    user_email = payload.get("sub")
-    result = await db.execute(
-        select(models.DBUser).filter(models.DBUser.email == user_email)
-    )
-    user_model = result.scalar_one_or_none()
-    return user_model.id
-
-
-async def create_post(db: AsyncSession, access_token, post: schemas.PostCreate):
-    if not access_token:
-        raise HTTPException(status_code=403, detail="Not authorized")
-    user_id = await get_user_model(access_token=access_token, db=db)
-    new_post = models.DBPost(
-        topic=post.topic,
-        content=post.content,
-        created_at=post.created_at,
-        user_id=user_id,
-    )
-    db.add(new_post)
-    await db.commit()
-    await db.refresh(new_post)
-    return new_post
-
-
-async def my_profile(access_token: str, user: schemas.UserEdit, db: AsyncSession):
+async def my_profile(access_token: str, user: serializers.UserEdit, db: AsyncSession):
     try:
         if not access_token:
             raise HTTPException(status_code=403, detail="Not authorized")
@@ -188,7 +166,7 @@ async def my_profile(access_token: str, user: schemas.UserEdit, db: AsyncSession
 
 
 async def change_password(
-    access_token, password: schemas.UserPasswordEdit, db: AsyncSession
+    access_token, password: serializers.UserPasswordEdit, db: AsyncSession
 ):
     user = await get_user_model(access_token=access_token, db=db)
     if await verify_password(password.old_password, user.password) and user:

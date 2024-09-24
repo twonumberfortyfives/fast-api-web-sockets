@@ -3,7 +3,7 @@ from fastapi import Depends, Request, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from db.engine import async_session
 from sqlalchemy.future import select
-from crud import SECRET_KEY, ALGORITHM
+from users.views import SECRET_KEY, ALGORITHM
 from db import models
 from db.models import Role
 

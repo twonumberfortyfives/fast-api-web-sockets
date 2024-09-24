@@ -1,5 +1,7 @@
-from pydantic import BaseModel, EmailStr, validator, Field
-from datetime import datetime
+from pydantic import BaseModel, EmailStr
+from pydantic.v1 import validator
+
+from posts.serializers import Post
 
 
 def validate_password(value: str) -> str:
@@ -31,7 +33,7 @@ class UserCreate(BaseModel):
     password: str
 
     @validator("password")
-    def validate_password(cls, value):
+    def validate_password(self, value):
         return validate_password(value)
 
 
@@ -48,21 +50,6 @@ class UserTokenResponse(BaseModel):
 
 class RefreshToken(BaseModel):
     refresh_token: str
-
-
-class Post(BaseModel):
-    id: int
-    topic: str
-    content: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    user_id: int
-
-
-class PostCreate(BaseModel):
-    topic: str
-    content: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    user_id: int
 
 
 class UserList(BaseModel):
@@ -82,5 +69,5 @@ class UserPasswordEdit(BaseModel):
     new_password: str
 
     @validator("new_password")
-    def validate_new_password(cls, value):
+    def validate_new_password(self, value):
         return validate_password(value)

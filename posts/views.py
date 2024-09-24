@@ -1,0 +1,40 @@
+from fastapi import HTTPException
+from passlib.context import CryptContext
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from dotenv import load_dotenv
+import os
+
+from db import models
+from posts import serializers
+from users.views import get_user_model
+
+load_dotenv()
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+
+async def get_all_posts(db: AsyncSession):
+    result = await db.execute(select(models.DBPost))
+    posts = result.scalars().all()
+    return posts
+
+
+async def create_post(db: AsyncSession, access_token, post: serializers.PostCreate):
+    if not access_token:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    user_id = (await get_user_model(access_token=access_token, db=db)).id
+    new_post = models.DBPost(
+        topic=post.topic,
+        content=post.content,
+        created_at=post.created_at,
+        user_id=user_id,
+    )
+    db.add(new_post)
+    await db.commit()
+    await db.refresh(new_post)
+    return new_post
