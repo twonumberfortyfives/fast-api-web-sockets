@@ -4,8 +4,11 @@ import jwt
 from fastapi import HTTPException
 from jose import JWTError
 from passlib.context import CryptContext
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
+from sqlalchemy.orm import selectinload
 import os
 
 from db import models
@@ -20,44 +23,64 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
-def get_all_users(db: Session):
-    return db.query(models.DBUser).all()
+async def get_all_users(db: AsyncSession):
+    result = await db.execute(
+        select(models.DBUser)
+        .outerjoin(models.DBPost)
+        .options(selectinload(models.DBUser.posts))
+    )
+    return result
 
 
-def retrieve_user(db: Session, user_id: int):
-    return db.query(models.DBUser).filter(models.DBUser.id == user_id).first()
+async def retrieve_user(db: AsyncSession, user_id: int):
+    result = await db.execute(
+        select(models.DBUser)
+        .outerjoin(models.DBPost)
+        .options(selectinload(models.DBUser.posts))
+        .filter(models.DBUser.id == user_id)
+    )
+    user = result.scalar()
+    return user
 
 
-def get_user_by_username(db: Session, username: str):
-    return db.query(models.DBUser).filter(models.DBUser.username == username).first()
+async def get_user_by_username(db: AsyncSession, username: str):
+    result = await db.execute(
+        select(models.DBUser).filter(models.DBUser.username == username)
+    )
+    user = result.scalar_one_or_none()
+    return user
 
 
-def get_user_by_email(db: Session, email: str):
-    return db.query(models.DBUser).filter(models.DBUser.email == email).first()
+async def get_user_by_email(db: AsyncSession, email: str):
+    result = await db.execute(
+        select(models.DBUser).filter(models.DBUser.email == email)
+    )
+    user = result.scalar_one_or_none()
+    return user
 
 
-def hash_password(password: str):
+async def hash_password(password: str):
     return pwd_context.hash(password)
 
 
-def verify_password(password: str, hashed_password: str):
+async def verify_password(password: str, hashed_password: str):
     return pwd_context.verify(password, hashed_password)
 
 
-def create_user(db: Session, user: schemas.UserCreate):
-    hashed_password = hash_password(user.password)
+async def create_user(db: AsyncSession, user: schemas.UserCreate):
+    hashed_password = await hash_password(user.password)
     db_user = models.DBUser(
         email=user.email,
         username=user.username,
         password=hashed_password,
     )
     db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
+    await db.commit()
+    await db.refresh(db_user)
     return db_user
 
 
-def create_access_token(data: dict, expires_delta: timedelta = None):
+async def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -69,43 +92,55 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     return encoded_jwt
 
 
-def create_refresh_token(data: dict):
+async def create_refresh_token(data: dict):
     expire = datetime.utcnow() + timedelta(days=30)
     data.update({"exp": expire})
     return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def login_user(db: Session, user: schemas.UserLogin) -> schemas.UserTokenResponse:
-    user_to_login = (
-        db.query(models.DBUser).filter(models.DBUser.email == user.email).first()
+async def login_user(
+    db: AsyncSession, user: schemas.UserLogin
+) -> schemas.UserTokenResponse:
+    result = await db.execute(
+        select(models.DBUser).filter(models.DBUser.email == user.email)
     )
-    if not user_to_login or not verify_password(user.password, user_to_login.password):
+    found_user = result.scalar_one_or_none()
+    if not found_user:
+        raise HTTPException(status_code=400, detail="Incorrect email or password")
+
+    verified_password = await verify_password(user.password, found_user.password)
+    if not verified_password:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
+    access_token = await create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
-    refresh_token = create_refresh_token(data={"sub": user.email})
+    refresh_token = await create_refresh_token(data={"sub": user.email})
 
     return schemas.UserTokenResponse(
         access_token=access_token, refresh_token=refresh_token
     )
 
 
-def get_all_posts(db: Session):
-    return db.query(models.DBPost).all()
+async def get_all_posts(db: AsyncSession):
+    result = await db.execute(select(models.DBPost))
+    posts = result.scalars().all()
+    return posts
 
 
-def get_user_model(access_token: str, db: Session):
+async def get_user_model(access_token: str, db: AsyncSession):
     payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
     user_email = payload.get("sub")
-    user_model = db.query(models.DBUser).filter(models.DBUser.email == user_email).first()
-    return user_model
+    result = await db.execute(
+        select(models.DBUser).filter(models.DBUser.email == user_email)
+    )
+    user_model = result.scalar_one_or_none()
+    return user_model.id
 
 
-def create_post(db: Session, access_token, post: schemas.PostCreate):
-    user_id = (get_user_model(access_token=access_token, db=db)).id
+async def create_post(db: AsyncSession, access_token, post: schemas.PostCreate):
+    user_id = await get_user_model(access_token=access_token, db=db)
     new_post = models.DBPost(
         topic=post.topic,
         content=post.content,
@@ -113,12 +148,12 @@ def create_post(db: Session, access_token, post: schemas.PostCreate):
         user_id=user_id,
     )
     db.add(new_post)
-    db.commit()
-    db.refresh(new_post)
+    await db.commit()
+    await db.refresh(new_post)
     return new_post
 
 
-def my_profile(access_token: str, user: schemas.UserEdit, db: Session):
+async def my_profile(access_token: str, user: schemas.UserEdit, db: AsyncSession):
     try:
         payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
         user_email = payload.get("sub")
@@ -128,9 +163,11 @@ def my_profile(access_token: str, user: schemas.UserEdit, db: Session):
                 status_code=403, detail="Invalid token or user not found"
             )
 
-        found_user = (
-            db.query(models.DBUser).filter(models.DBUser.email == user_email).first()
+        result = await db.execute(
+            select(models.DBUser).filter(models.DBUser.email == user_email)
         )
+
+        found_user = result.scalar_one_or_none()
 
         if found_user is None:
             raise HTTPException(status_code=404, detail="User not found")
@@ -138,8 +175,8 @@ def my_profile(access_token: str, user: schemas.UserEdit, db: Session):
         found_user.username = user.username
         found_user.email = user.email
 
-        db.commit()
-        db.refresh(found_user)
+        await db.commit()
+        await db.refresh(found_user)
 
         return found_user
 
@@ -149,18 +186,20 @@ def my_profile(access_token: str, user: schemas.UserEdit, db: Session):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-def change_password(access_token, password: schemas.UserPasswordEdit, db: Session):
-    user = get_user_model(access_token=access_token, db=db)
-    if verify_password(password.old_password, user.password) and user:
-        new_hashed_password = hash_password(password.new_password)
+async def change_password(
+    access_token, password: schemas.UserPasswordEdit, db: AsyncSession
+):
+    user = await get_user_model(access_token=access_token, db=db)
+    if await verify_password(password.old_password, user.password) and user:
+        new_hashed_password = await hash_password(password.new_password)
         user.password = new_hashed_password
-        db.commit()
-        db.refresh(user)
+        await db.commit()
+        await db.refresh(user)
         return True
     return False
 
 
-def is_authenticated(access_token: str, db: Session):
+async def is_authenticated(access_token: str, db: AsyncSession):
     if not access_token:
         return False
 
@@ -171,11 +210,14 @@ def is_authenticated(access_token: str, db: Session):
         if not user_email:
             return False
 
-        user = db.query(models.DBUser).filter(models.DBUser.email == user_email).first()
+        result = await db.execute(
+            select(models.DBUser).filter(models.DBUser.email == user_email)
+        )
+        user = result.scalar()
+
         return user is not None
 
     except jwt.ExpiredSignatureError:
         return False
     except jwt.PyJWTError:
         return False
-
