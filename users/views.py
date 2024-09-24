@@ -214,3 +214,12 @@ async def logout(response: Response, request: Request):
         return {"message": "Logout successful"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+async def delete_my_account(access_token: str, db: AsyncSession):
+    user = await get_user_model(access_token=access_token, db=db)
+    if not user:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    await db.delete(user)
+    await db.commit()
+    return True

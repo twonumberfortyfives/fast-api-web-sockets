@@ -139,3 +139,11 @@ async def refresh_token(user_refresh_token: serializers.RefreshToken):
         key="refresh_token", value=new_refresh_token, httponly=True, samesite="strict"
     )
     return response
+
+
+@router.delete("/delete-my-account")
+async def delete_my_account(request: Request, db: AsyncSession = Depends(get_db)):
+    access_token = request.cookies.get("access_token")
+    result = await views.delete_my_account(access_token=access_token, db=db)
+    if result:
+        return {"message": "Your account has been deleted."}

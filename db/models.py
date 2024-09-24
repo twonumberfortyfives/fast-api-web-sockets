@@ -21,7 +21,7 @@ class DBUser(Base):
     password = Column(String, nullable=False)
     role = Column(Enum(Role), nullable=False, default=Role.user)
 
-    posts = relationship("DBPost", back_populates="user")
+    posts = relationship("DBPost", back_populates="user", cascade="all, delete-orphan")
 
 
 class DBPost(Base):
@@ -30,6 +30,6 @@ class DBPost(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     topic = Column(String(255), nullable=True)
     content = Column(String(500), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     user = relationship("DBUser", back_populates="posts")
