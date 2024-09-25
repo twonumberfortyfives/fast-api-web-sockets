@@ -2,7 +2,7 @@ from datetime import timedelta, datetime
 
 import jwt
 from fastapi import HTTPException
-from jose import JWTError
+from fastapi.responses import JSONResponse
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -12,6 +12,7 @@ from sqlalchemy.orm import selectinload
 import os
 
 from db import models
+from dependencies import get_current_user
 from users import serializers
 
 load_dotenv()
@@ -19,11 +20,11 @@ load_dotenv()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = "HS256"
+ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
-async def get_all_users(db: AsyncSession):
+async def get_users_view(db: AsyncSession):
     result = await db.execute(
         select(models.DBUser)
         .outerjoin(models.DBPost)
@@ -32,7 +33,7 @@ async def get_all_users(db: AsyncSession):
     return result
 
 
-async def retrieve_user(db: AsyncSession, user_id: int):
+async def retrieve_user_view(db: AsyncSession, user_id: int):
     result = await db.execute(
         select(models.DBUser)
         .outerjoin(models.DBPost)
@@ -79,7 +80,7 @@ async def verify_password(password: str, hashed_password: str):
     return pwd_context.verify(password, hashed_password)
 
 
-async def create_user(db: AsyncSession, user: serializers.UserCreate):
+async def register_view(db: AsyncSession, user: serializers.UserCreate):
     hashed_password = await hash_password(user.password)
     db_user = models.DBUser(
         email=user.email,
@@ -110,16 +111,10 @@ async def create_refresh_token(data: dict):
     return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
 
 
-async def login_user(
-    db: AsyncSession, user: serializers.UserLogin
+async def login_view(
+    db: AsyncSession, user: serializers.UserLogin, request: Request
 ) -> serializers.UserTokenResponse:
-    result = await db.execute(
-        select(models.DBUser).filter(models.DBUser.email == user.email)
-    )
-    found_user = result.scalar_one_or_none()
-    if not found_user:
-        raise HTTPException(status_code=400, detail="Incorrect email or password")
-
+    found_user = await get_current_user(request=request, db=db)
     verified_password = await verify_password(user.password, found_user.password)
     if not verified_password:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
@@ -135,48 +130,29 @@ async def login_user(
     )
 
 
-async def my_profile(access_token: str, db: AsyncSession):
-    user_id = (await get_user_model(access_token=access_token, db=db)).id
-    user = await retrieve_user(db=db, user_id=user_id)
+async def my_profile_view(request: Request, db: AsyncSession):
+    user_id = (await get_current_user(request=request, db=db)).id
+    user = await retrieve_user_view(db=db, user_id=user_id)
     return user
 
 
-async def my_profile_edit(
-    access_token: str, user: serializers.UserEdit, db: AsyncSession
+async def my_profile_edit_view(
+    request: Request, user: serializers.UserEdit, db: AsyncSession
 ):
-    try:
-        if not access_token:
-            raise HTTPException(status_code=403, detail="Not authorized")
-        payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_email = payload.get("sub")
+    found_user = get_current_user(request=request, db=db)
+    found_user.username = user.username
+    found_user.email = user.email
 
-        result = await db.execute(
-            select(models.DBUser).filter(models.DBUser.email == user_email)
-        )
+    await db.commit()
+    await db.refresh(found_user)
 
-        found_user = result.scalar_one_or_none()
-
-        if found_user is None:
-            raise HTTPException(status_code=404, detail="User not found")
-
-        found_user.username = user.username
-        found_user.email = user.email
-
-        await db.commit()
-        await db.refresh(found_user)
-
-        return found_user
-
-    except JWTError:
-        raise HTTPException(status_code=403, detail="Could not validate credentials")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return found_user
 
 
-async def change_password(
-    access_token, password: serializers.UserPasswordEdit, db: AsyncSession
+async def change_password_view(
+    request: Request, password: serializers.UserPasswordEdit, db: AsyncSession
 ):
-    user = await get_user_model(access_token=access_token, db=db)
+    user = await get_current_user(request=request, db=db)
     if await verify_password(password.old_password, user.password) and user:
         new_hashed_password = await hash_password(password.new_password)
         user.password = new_hashed_password
@@ -186,31 +162,12 @@ async def change_password(
     return False
 
 
-async def is_authenticated(access_token: str, db: AsyncSession):
-    if not access_token:
-        return False
-
-    try:
-        user_data = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_email = user_data.get("sub")
-
-        if not user_email:
-            return False
-
-        result = await db.execute(
-            select(models.DBUser).filter(models.DBUser.email == user_email)
-        )
-        user = result.scalar()
-
-        return user is not None
-
-    except jwt.ExpiredSignatureError:
-        return False
-    except jwt.PyJWTError:
-        return False
+async def is_authenticated_view(request: Request, db: AsyncSession):
+    user = get_current_user(db=db, request=request)
+    return user is not None
 
 
-async def logout(response: Response, request: Request):
+async def logout_view(response: Response, request: Request):
     try:
         access_token = request.cookies.get("access_token")
         refresh_token = request.cookies.get("refresh_token")
@@ -224,10 +181,36 @@ async def logout(response: Response, request: Request):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-async def delete_my_account(access_token: str, db: AsyncSession):
-    user = await get_user_model(access_token=access_token, db=db)
-    if not user:
-        raise HTTPException(status_code=403, detail="Not authorized")
+async def delete_my_account_view(request: Request, db: AsyncSession):
+    user = get_current_user(request=request, db=db)
     await db.delete(user)
     await db.commit()
     return True
+
+
+async def refresh_token_view(user_refresh_token: serializers.RefreshToken):
+    try:
+        payload = jwt.decode(
+            user_refresh_token.refresh_token,
+            os.getenv("SECRET_KEY"),
+            algorithms=[os.getenv("ALGORITHM")],
+        )
+        email = payload.get("sub")
+
+        if not email:
+            raise HTTPException(status_code=403, detail="Invalid refresh token")
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=403, detail="Refresh token has expired")
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=403, detail="Invalid refresh token")
+
+    new_access_token = await create_access_token(data={"sub": email})
+    new_refresh_token = await create_refresh_token(data={"sub": email})
+    response = JSONResponse(status_code=200, content={"message": "Token updated."})
+    response.set_cookie(
+        key="access_token", value=new_access_token, httponly=True, samesite="strict"
+    )
+    response.set_cookie(
+        key="refresh_token", value=new_refresh_token, httponly=True, samesite="strict"
+    )
+    return response

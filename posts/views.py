@@ -1,4 +1,4 @@
-from fastapi import HTTPException
+from fastapi import HTTPException, Request
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -7,7 +7,7 @@ import os
 
 from db import models
 from posts import serializers
-from users.views import get_user_model
+from dependencies import get_current_user
 
 load_dotenv()
 
@@ -18,16 +18,16 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
-async def get_all_posts(db: AsyncSession):
+async def get_all_posts_view(db: AsyncSession):
     result = await db.execute(select(models.DBPost))
     posts = result.scalars().all()
     return posts
 
 
-async def create_post(db: AsyncSession, access_token, post: serializers.PostCreate):
-    if not access_token:
-        raise HTTPException(status_code=403, detail="Not authorized")
-    user_id = (await get_user_model(access_token=access_token, db=db)).id
+async def create_post_view(
+    db: AsyncSession, request: Request, post: serializers.PostCreate
+):
+    user_id = (await get_current_user(db=db, request=request)).id
     new_post = models.DBPost(
         topic=post.topic,
         content=post.content,
@@ -40,13 +40,13 @@ async def create_post(db: AsyncSession, access_token, post: serializers.PostCrea
     return new_post
 
 
-async def change_post(
+async def edit_post_view(
     post_update: serializers.PostUpdate,
     post_id: int,
-    access_token: str,
+    request: Request,
     db: AsyncSession,
 ):
-    user_id = (await get_user_model(access_token=access_token, db=db)).id
+    user_id = (await get_current_user(request=request, db=db)).id
     result = await db.execute(select(models.DBPost).filter(models.DBPost.id == post_id))
     post = result.scalar_one_or_none()
 
@@ -69,10 +69,10 @@ async def change_post(
     return post
 
 
-async def delete_post(db: AsyncSession, post_id: int, access_token: str):
+async def delete_post_view(db: AsyncSession, post_id: int, request: Request):
     result = await db.execute(select(models.DBPost).filter(models.DBPost.id == post_id))
     post = result.scalar_one_or_none()
-    user = (await get_user_model(access_token=access_token, db=db)).id
+    user = (await get_current_user(request=request, db=db)).id
     if post.user_id == user:
         await db.delete(post)
         await db.commit()

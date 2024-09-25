@@ -1,9 +1,10 @@
+import os
+
 import jwt
 from fastapi import Depends, Request, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from db.engine import async_session
 from sqlalchemy.future import select
-from users.views import SECRET_KEY, ALGORITHM
 from db import models
 from db.models import Role
 
@@ -19,7 +20,9 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
         raise HTTPException(status_code=401, detail="Not authenticated")
 
     try:
-        user_data = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_data = jwt.decode(
+            access_token, os.getenv("SECRET_KEY"), algorithms=[os.getenv("ALGORITHM")]
+        )
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired")
     except jwt.PyJWTError:
