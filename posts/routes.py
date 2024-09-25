@@ -55,3 +55,16 @@ async def edit_post(
     )
 
     return result
+
+
+@router.delete("/delete-post/{post_id}")
+async def delete_post(
+    post_id: int, request: Request, db: AsyncSession = Depends(get_db)
+):
+    access_token = request.cookies.get("access_token")
+    if not access_token:
+        raise HTTPException(status_code=403, detail="Access token is missing")
+    result = await views.delete_post(post_id=post_id, db=db, access_token=access_token)
+    if result:
+        return {"message": "Post deleted"}
+    raise HTTPException(status_code=403, detail="Token validation error")

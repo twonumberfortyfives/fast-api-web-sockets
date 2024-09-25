@@ -67,3 +67,16 @@ async def change_post(
     await db.refresh(post)
 
     return post
+
+
+async def delete_post(db: AsyncSession, post_id: int, access_token: str):
+    result = await db.execute(select(models.DBPost).filter(models.DBPost.id == post_id))
+    post = result.scalar_one_or_none()
+    user = (await get_user_model(access_token=access_token, db=db)).id
+    if post.user_id == user:
+        await db.delete(post)
+        await db.commit()
+        return True
+    raise HTTPException(
+        status_code=403, detail="You are not allowed to delete this post"
+    )
