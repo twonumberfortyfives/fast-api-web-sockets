@@ -112,9 +112,9 @@ async def create_refresh_token(data: dict):
 
 
 async def login_view(
-    db: AsyncSession, user: serializers.UserLogin, request: Request
+    db: AsyncSession, user: serializers.UserLogin
 ) -> serializers.UserTokenResponse:
-    found_user = await get_current_user(request=request, db=db)
+    found_user = await get_user_by_email(email=user.email, db=db)
     verified_password = await verify_password(user.password, found_user.password)
     if not verified_password:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
@@ -139,7 +139,7 @@ async def my_profile_view(request: Request, db: AsyncSession):
 async def my_profile_edit_view(
     request: Request, user: serializers.UserEdit, db: AsyncSession
 ):
-    found_user = get_current_user(request=request, db=db)
+    found_user = await get_current_user(request=request, db=db)
     found_user.username = user.username
     found_user.email = user.email
 
@@ -163,8 +163,11 @@ async def change_password_view(
 
 
 async def is_authenticated_view(request: Request, db: AsyncSession):
-    user = get_current_user(db=db, request=request)
-    return user is not None
+    user = await get_current_user(db=db, request=request)
+    if user:
+        return True
+    else:
+        return False
 
 
 async def logout_view(response: Response, request: Request):
@@ -181,10 +184,12 @@ async def logout_view(response: Response, request: Request):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-async def delete_my_account_view(request: Request, db: AsyncSession):
-    user = get_current_user(request=request, db=db)
+async def delete_my_account_view(request: Request, response: Response, db: AsyncSession):
+    user = await get_current_user(request=request, db=db)
     await db.delete(user)
     await db.commit()
+    response.delete_cookie(key="access_token")
+    response.delete_cookie(key="refresh_token")
     return True
 
 
