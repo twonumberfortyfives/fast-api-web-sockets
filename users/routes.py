@@ -86,9 +86,7 @@ async def register(user: serializers.UserCreate, db: AsyncSession = Depends(get_
 
 
 @router.post("/login")
-async def login(
-    user: serializers.UserLogin, db: AsyncSession = Depends(get_db)
-):
+async def login(user: serializers.UserLogin, db: AsyncSession = Depends(get_db)):
     user_tokens = await views.login_view(db=db, user=user)
 
     response = JSONResponse(content={"message": "Login successful."}, status_code=200)
@@ -121,7 +119,11 @@ async def refresh_token(user_refresh_token: serializers.RefreshToken):
 
 
 @router.delete("/delete-my-account")
-async def delete_my_account(request: Request, response: Response, db: AsyncSession = Depends(get_db)):
-    result = await views.delete_my_account_view(request=request, response=response, db=db)
+async def delete_my_account(
+    request: Request, response: Response, db: AsyncSession = Depends(get_db)
+):
+    result = await views.delete_my_account_view(
+        request=request, response=response, db=db
+    )
     if result:
         return {"message": "Your account has been deleted."}

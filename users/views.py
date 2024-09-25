@@ -184,7 +184,9 @@ async def logout_view(response: Response, request: Request):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-async def delete_my_account_view(request: Request, response: Response, db: AsyncSession):
+async def delete_my_account_view(
+    request: Request, response: Response, db: AsyncSession
+):
     user = await get_current_user(request=request, db=db)
     await db.delete(user)
     await db.commit()
