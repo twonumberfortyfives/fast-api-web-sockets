@@ -135,7 +135,13 @@ async def login_user(
     )
 
 
-async def my_profile(access_token: str, user: serializers.UserEdit, db: AsyncSession):
+async def my_profile(access_token: str, db: AsyncSession):
+    user_id = (await get_user_model(access_token=access_token, db=db)).id
+    user = await retrieve_user(db=db, user_id=user_id)
+    return user
+
+
+async def my_profile_edit(access_token: str, user: serializers.UserEdit, db: AsyncSession):
     try:
         if not access_token:
             raise HTTPException(status_code=403, detail="Not authorized")

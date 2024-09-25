@@ -43,12 +43,19 @@ async def retrieve_user(user_id: int, db: AsyncSession = Depends(get_db)):
     raise HTTPException(status_code=404, detail="User not found")
 
 
-@router.put("/my-profile", response_model=serializers.UserEdit)
-async def my_profile(
+@router.get("/my-profile", response_model=serializers.UserList)
+async def my_profile(request: Request, db: AsyncSession = Depends(get_db)):
+    access_token = request.cookies.get("access_token")
+    user = await views.my_profile(access_token=access_token, db=db)
+    return user
+
+
+@router.put("/my-profile/edit", response_model=serializers.UserEdit)
+async def my_profile_edit(
     request: Request, user: serializers.UserEdit, db: AsyncSession = Depends(get_db)
 ):
     access_token = request.cookies.get("access_token")
-    user = await views.my_profile(access_token=access_token, user=user, db=db)
+    user = await views.my_profile_edit(access_token=access_token, user=user, db=db)
     return user
 
 
