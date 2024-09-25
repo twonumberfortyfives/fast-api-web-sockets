@@ -38,3 +38,32 @@ async def create_post(db: AsyncSession, access_token, post: serializers.PostCrea
     await db.commit()
     await db.refresh(new_post)
     return new_post
+
+
+async def change_post(post_update: serializers.PostUpdate, post_id: int, access_token: str, db: AsyncSession):
+    user_id = (await get_user_model(access_token=access_token, db=db)).id
+    result = await db.execute(
+        select(models.DBPost).filter(models.DBPost.id == post_id)
+    )
+    post = result.scalar_one_or_none()
+
+    if post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    if post.user_id != user_id:
+        raise HTTPException(status_code=403, detail="You are not allowed to edit this post")
+
+    post.topic = post_update.topic
+    post.content = post_update.content
+    post.created_at = post_update.created_at
+
+    db.add(post)
+    await db.commit()
+    await db.refresh(post)
+
+    return post
+
+
+
+
+
