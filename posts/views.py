@@ -5,6 +5,8 @@ from sqlalchemy.future import select
 from dotenv import load_dotenv
 import os
 
+from sqlalchemy.orm import selectinload
+
 from db import models
 from posts import serializers
 from dependencies import get_current_user
@@ -19,9 +21,29 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
 async def get_all_posts_view(db: AsyncSession):
-    result = await db.execute(select(models.DBPost))
+    result = await db.execute(
+        select(models.DBPost)
+        .outerjoin(models.DBUser)
+        .options(selectinload(models.DBPost.user))
+    )
     posts = result.scalars().all()
-    return posts
+    if posts:
+        return posts
+    raise HTTPException(status_code=404, detail="No posts found")
+
+
+async def retrieve_post_view(post_id: int, db: AsyncSession):
+    result = await db.execute(
+        select(models.DBPost)
+        .outerjoin(models.DBUser)
+        .options(selectinload(models.DBPost.user))
+        .filter(models.DBPost.id == post_id)
+    )
+    post = result.scalar_one_or_none()
+    if post:
+        return post
+    else:
+        raise HTTPException(status_code=404, detail="No post found")
 
 
 async def create_post_view(

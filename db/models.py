@@ -17,7 +17,7 @@ class DBUser(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     email = Column(String, unique=True, nullable=False)
-    username = Column(String(255), unique=True, nullable=False)
+    username = Column(String(15), unique=True, nullable=False)
     password = Column(String, nullable=False)
     role = Column(Enum(Role), nullable=False, default=Role.user)
 

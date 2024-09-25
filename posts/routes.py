@@ -8,9 +8,14 @@ from posts import serializers, views
 router = APIRouter()
 
 
-@router.get("/get-posts", response_model=list[serializers.Post])
+@router.get("/get-posts", response_model=list[serializers.PostList])
 async def get_all_posts(db: AsyncSession = Depends(get_db)):
     return await views.get_all_posts_view(db)
+
+
+@router.get("/get-posts/{post_id}", response_model=serializers.PostList)
+async def retrieve_post(post_id: int, db: AsyncSession = Depends(get_db)):
+    return await views.retrieve_post_view(post_id, db)
 
 
 @router.post("/create-post", response_model=serializers.Post)
