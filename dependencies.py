@@ -16,6 +16,7 @@ async def get_db() -> AsyncSession:
 
 async def get_current_user(request: Request, db: AsyncSession = Depends(get_db)):
     access_token = request.cookies.get("access_token")
+    refresh_token = request.cookies.get("refresh_token")
     if access_token is None:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
@@ -35,7 +36,6 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
     user = result.scalar_one_or_none()  # Returns one row or None
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
-
     return user
 
 
@@ -47,5 +47,4 @@ def require_role(required_role: Role):
                 detail="You are not allowed to perform this action",
             )
         return current_user
-
     return role_checker

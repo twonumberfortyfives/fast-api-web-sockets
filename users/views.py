@@ -115,19 +115,21 @@ async def login_view(
     db: AsyncSession, user: serializers.UserLogin
 ) -> serializers.UserTokenResponse:
     found_user = await get_user_by_email(email=user.email, db=db)
-    verified_password = await verify_password(user.password, found_user.password)
-    if not verified_password:
-        raise HTTPException(status_code=400, detail="Incorrect email or password")
+    if found_user:
+        verified_password = await verify_password(user.password, found_user.password)
+        if not verified_password:
+            raise HTTPException(status_code=400, detail="Incorrect email or password")
 
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = await create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
-    )
-    refresh_token = await create_refresh_token(data={"sub": user.email})
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = await create_access_token(
+            data={"sub": user.email}, expires_delta=access_token_expires
+        )
+        refresh_token = await create_refresh_token(data={"sub": user.email})
 
-    return serializers.UserTokenResponse(
-        access_token=access_token, refresh_token=refresh_token
-    )
+        return serializers.UserTokenResponse(
+            access_token=access_token, refresh_token=refresh_token
+        )
+    raise HTTPException(status_code=404, detail="User not found")
 
 
 async def my_profile_view(request: Request, db: AsyncSession):

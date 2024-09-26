@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Chat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        #messages {
+            border: 1px solid #000;
+            height: 300px;
+            overflow-y: scroll;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        #messages div {
+            padding: 5px;
+            margin-bottom: 10px;
+            background-color: #f1f1f1;
+            border-radius: 5px;
+        }
+        #inputContainer {
+            display: flex;
+        }
+        #messageInput {
+            flex: 1;
+            padding: 10px;
+        }
+        #sendButton {
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Chat</h1>
+
+    <div id="messages"></div>
+
+    <div id="inputContainer">
+        <input type="text" id="messageInput" placeholder="Type your message here..." />
+        <button id="sendButton">Send</button>
+    </div>
+
+    <script>
+        const messagesDiv = document.getElementById("messages");
+        const messageInput = document.getElementById("messageInput");
+        const sendButton = document.getElementById("sendButton");
+
+        // Replace with actual user IDs
+        const senderId = 1; // Example sender ID
+        const receiverId = 2; // Example receiver ID
+
+        // Initialize WebSocket connection with sender and receiver IDs
+        const socket = new WebSocket(`ws://localhost:8000/ws/${senderId}/${receiverId}/`);
+
+        // Handle incoming messages
+        socket.onmessage = function(event) {
+            const message = document.createElement("div");
+            message.textContent = event.data;
+            messagesDiv.appendChild(message);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll to the bottom
+        };
+
+        // Send message when the user clicks the 'Send' button
+        sendButton.onclick = function() {
+            const message = messageInput.value;
+            if (message) {
+                socket.send(message);
+                messageInput.value = "";  // Clear the input field after sending
+            }
+        };
+
+        // Optionally, send message on Enter key press
+        messageInput.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                sendButton.click();
+            }
+        });
+
+    </script>
+</body>
+</html>

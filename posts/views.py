@@ -32,13 +32,22 @@ async def get_all_posts_view(db: AsyncSession):
     raise HTTPException(status_code=404, detail="No posts found")
 
 
-async def retrieve_post_view(post_id: int, db: AsyncSession):
-    result = await db.execute(
-        select(models.DBPost)
-        .outerjoin(models.DBUser)
-        .options(selectinload(models.DBPost.user))
-        .filter(models.DBPost.id == post_id)
-    )
+async def retrieve_post_view(post, db: AsyncSession):
+    result = None
+    if isinstance(post, int):
+        result = await db.execute(
+            select(models.DBPost)
+            .outerjoin(models.DBUser)
+            .options(selectinload(models.DBPost.user))
+            .filter(models.DBPost.id == post)
+        )
+    if isinstance(post, str):
+        result = await db.execute(
+            select(models.DBPost)
+            .outerjoin(models.DBUser)
+            .options(selectinload(models.DBPost.user))
+            .filter(models.DBPost.topic == post)
+        )
     post = result.scalar_one_or_none()
     if post:
         return post
@@ -53,7 +62,6 @@ async def create_post_view(
     new_post = models.DBPost(
         topic=post.topic,
         content=post.content,
-        created_at=post.created_at,
         user_id=user_id,
     )
     db.add(new_post)
@@ -82,7 +90,6 @@ async def edit_post_view(
 
     post.topic = post_update.topic
     post.content = post_update.content
-    post.created_at = post_update.created_at
 
     db.add(post)
     await db.commit()
