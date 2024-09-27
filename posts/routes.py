@@ -45,6 +45,5 @@ async def delete_post(
     post_id: int, request: Request, response: Response, db: AsyncSession = Depends(get_db)
 ):
     result = await views.delete_post_view(post_id=post_id, db=db, request=request, response=response)
-    if result:
-        return {"message": "Post deleted"}
-    raise HTTPException(status_code=403, detail="Token validation error")
+    return result
+

@@ -101,13 +101,19 @@ async def edit_post_view(
 
 
 async def delete_post_view(db: AsyncSession, post_id: int, request: Request, response: Response):
+    is_deleted = False
     result = await db.execute(select(models.DBPost).filter(models.DBPost.id == post_id))
     post = result.scalar_one_or_none()
-    user = (await get_current_user(request=request, db=db, response=response)).id
-    if post.user_id == user:
-        await db.delete(post)
-        await db.commit()
-        return True
-    raise HTTPException(
-        status_code=403, detail="You are not allowed to delete this post"
-    )
+    if post:
+        user = (await get_current_user(request=request, db=db, response=response)).id
+        if post.user_id == user:
+            await db.delete(post)
+            await db.commit()
+            is_deleted = True
+        if is_deleted:
+            return {"message": "Post deleted"}
+        raise HTTPException(
+            status_code=403, detail="You are not allowed to delete this post"
+        )
+    else:
+        raise HTTPException(status_code=404, detail="No post found")
