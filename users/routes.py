@@ -33,9 +33,7 @@ async def get_users(db: AsyncSession = Depends(get_db)):
 @router.get("/users/{user_id}", response_model=serializers.UserList)
 async def retrieve_user(user_id: int, db: AsyncSession = Depends(get_db)):
     user = await views.retrieve_user_view(db=db, user_id=user_id)
-    if user:
-        return user
-    raise HTTPException(status_code=404, detail="User not found")
+    return user
 
 
 @router.get("/my-profile", response_model=serializers.UserList)

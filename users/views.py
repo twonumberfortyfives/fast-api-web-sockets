@@ -38,7 +38,9 @@ async def retrieve_user_view(db: AsyncSession, user_id: int):
         .filter(models.DBUser.id == user_id)
     )
     user = result.scalar()
-    return user
+    if user:
+        return user
+    raise HTTPException(status_code=404, detail="User not found")
 
 
 async def get_user_by_username(db: AsyncSession, username: str):
