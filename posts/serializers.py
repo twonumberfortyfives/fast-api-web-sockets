@@ -6,6 +6,7 @@ class Post(BaseModel):
     id: int
     topic: str
     content: str
+    tags: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     user_id: int
 
@@ -20,6 +21,7 @@ class PostList(BaseModel):
     id: int
     topic: str
     content: str
+    tags: list[str]
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     user: UserForPostList
 
@@ -27,6 +29,7 @@ class PostList(BaseModel):
 class PostCreate(BaseModel):
     topic: str
     content: str
+    tags: list[str]
 
     @field_validator("topic")
     def validate_topic(cls, value):
@@ -44,3 +47,4 @@ class PostCreate(BaseModel):
 class PostUpdate(BaseModel):
     topic: str
     content: str
+    tags: list[str]

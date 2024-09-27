@@ -35,6 +35,7 @@ class DBPost(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     topic = Column(String(255), nullable=True)
     content = Column(String(500), nullable=False)
+    tags = Column(String(100), nullable=True)
     user_id = Column(
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
