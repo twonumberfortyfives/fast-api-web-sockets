@@ -1,4 +1,3 @@
-import jwt
 from fastapi import APIRouter, Request, Depends, HTTPException, Response
 from fastapi.responses import JSONResponse
 
@@ -7,14 +6,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db import models
 from dependencies import get_db, require_role
 from users import views, serializers
-from users.views import refresh_token_view
 
 router = APIRouter()
 
 
 @router.get("/is-authenticated")
-async def is_authenticated(request: Request, db: AsyncSession = Depends(get_db)):
-    is_user = await views.is_authenticated_view(request=request, db=db)
+async def is_authenticated(request: Request, response: Response, db: AsyncSession = Depends(get_db)):
+    is_user = await views.is_authenticated_view(request=request, response=response, db=db)
     return is_user
 
 
@@ -25,14 +23,14 @@ async def get_admin_end_point(
     return {"message": "Welcome admin!"}
 
 
-@router.get("/get-users", response_model=list[serializers.UserList])
+@router.get("/users", response_model=list[serializers.UserList])
 async def get_users(db: AsyncSession = Depends(get_db)):
     result = await views.get_users_view(db=db)
     users = result.scalars().all()
     return users
 
 
-@router.get("/get-users/{user_id}", response_model=serializers.UserList)
+@router.get("/users/{user_id}", response_model=serializers.UserList)
 async def retrieve_user(user_id: int, db: AsyncSession = Depends(get_db)):
     user = await views.retrieve_user_view(db=db, user_id=user_id)
     if user:
@@ -41,26 +39,27 @@ async def retrieve_user(user_id: int, db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/my-profile", response_model=serializers.UserList)
-async def my_profile(request: Request, db: AsyncSession = Depends(get_db)):
-    user = await views.my_profile_view(request=request, db=db)
+async def my_profile(request: Request, response: Response, db: AsyncSession = Depends(get_db)):
+    user = await views.my_profile_view(request=request, response=response, db=db)
     return user
 
 
-@router.put("/my-profile/edit", response_model=serializers.UserEdit)
+@router.put("/my-profile", response_model=serializers.UserEdit)
 async def my_profile_edit(
-    request: Request, user: serializers.UserEdit, db: AsyncSession = Depends(get_db)
+    request: Request, response: Response, user: serializers.UserEdit, db: AsyncSession = Depends(get_db)
 ):
-    user = await views.my_profile_edit_view(request=request, user=user, db=db)
+    user = await views.my_profile_edit_view(request=request, response=response, user=user, db=db)
     return user
 
 
 @router.patch("/my-profile/change-password")
 async def change_password(
     request: Request,
+    response: Response,
     password: serializers.UserPasswordEdit,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await views.change_password_view(request=request, password=password, db=db)
+    result = await views.change_password_view(request=request, response=response, password=password, db=db)
     if result:
         return {"message": "Password changed successfully"}
     raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -113,12 +112,7 @@ async def logout(response: Response, request: Request):
     return await views.logout_view(response, request)
 
 
-@router.post("/refresh")
-async def refresh_token(user_refresh_token: serializers.RefreshToken):
-    return await refresh_token_view(user_refresh_token)
-
-
-@router.delete("/delete-my-account")
+@router.delete("/my-profile")
 async def delete_my_account(
     request: Request, response: Response, db: AsyncSession = Depends(get_db)
 ):

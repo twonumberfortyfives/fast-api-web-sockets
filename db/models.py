@@ -1,6 +1,6 @@
 import datetime
 from sqlalchemy import Integer, Column, String, ForeignKey, DateTime, Enum, Text, func
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, validates
 from enum import Enum as PyEnum
 from db.engine import Base
 
@@ -21,7 +21,9 @@ class DBUser(Base):
     created_at = Column(DateTime, server_default=func.now())
 
     posts = relationship("DBPost", back_populates="user", cascade="all, delete-orphan")
-    sent_messages = relationship("DBMessage", foreign_keys="[DBMessage.sender_id]", back_populates="sender")
+    sent_messages = relationship(
+        "DBMessage", foreign_keys="[DBMessage.sender_id]", back_populates="sender"
+    )
 
     # Removed received_messages to avoid confusion, as it's implicit in the chat structure
     participants = relationship("DBChatParticipant", back_populates="user")
@@ -33,9 +35,17 @@ class DBPost(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     topic = Column(String(255), nullable=True)
     content = Column(String(500), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
     created_at = Column(DateTime, server_default=func.now())
     user = relationship("DBUser", back_populates="posts")
+
+    @validates("topic", "content")
+    def validate_topic(self, key, value):
+        if value == "":
+            raise ValueError("topic cannot be blank.")
+        return value
 
 
 class DBChat(Base):

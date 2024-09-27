@@ -60,7 +60,13 @@ manager = ConnectionManager()
 
 
 @app.websocket("/ws/{sender_id}/{receiver_id}")
-async def chat(request: Request, websocket: WebSocket, sender_id: int, receiver_id: int, db: AsyncSession = Depends(get_db)):
+async def chat(
+    request: Request,
+    websocket: WebSocket,
+    sender_id: int,
+    receiver_id: int,
+    db: AsyncSession = Depends(get_db),
+):
     try:
         # Authenticate user via token or other method
         user_id = await get_current_user(request=request, db=db)
@@ -80,7 +86,7 @@ async def chat(request: Request, websocket: WebSocket, sender_id: int, receiver_
                 chat_id=chat.id,
                 sender_id=sender_id,
                 content=data,
-                created_at=datetime.utcnow()
+                created_at=datetime.utcnow(),
             )
             db.add(new_message)
             await db.commit()

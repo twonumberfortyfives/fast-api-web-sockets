@@ -1,6 +1,5 @@
-from fastapi import Depends, Request, APIRouter, HTTPException
+from fastapi import Depends, Request, APIRouter, HTTPException, Response
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from dependencies import get_db
 from posts import serializers, views
 
@@ -8,43 +7,44 @@ from posts import serializers, views
 router = APIRouter()
 
 
-@router.get("/get-posts", response_model=list[serializers.PostList])
+@router.get("/posts", response_model=list[serializers.PostList])
 async def get_all_posts(db: AsyncSession = Depends(get_db)):
     return await views.get_all_posts_view(db)
 
 
-@router.get("/get-posts/{post}", response_model=serializers.PostList)
+@router.get("/posts/{post}", response_model=serializers.PostList)
 async def retrieve_post(post, db: AsyncSession = Depends(get_db)):
     return await views.retrieve_post_view(post, db)
 
 
-@router.post("/create-post", response_model=serializers.Post)
+@router.post("/posts", response_model=serializers.Post)
 async def create_post(
-    request: Request, post: serializers.PostCreate, db: AsyncSession = Depends(get_db)
+    request: Request, response: Response, post: serializers.PostCreate, db: AsyncSession = Depends(get_db)
 ):
-    response = await views.create_post_view(db=db, request=request, post=post)
+    response = await views.create_post_view(db=db, request=request, post=post, response=response)
     return response
 
 
-@router.patch("/edit-post/{post_id}", response_model=serializers.Post)
+@router.patch("/posts/{post_id}", response_model=serializers.Post)
 async def edit_post(
     post_update: serializers.PostUpdate,
     post_id: int,
     request: Request,
+    response: Response,
     db: AsyncSession = Depends(get_db),
 ):
     result = await views.edit_post_view(
-        post_update=post_update, post_id=post_id, request=request, db=db
+        post_update=post_update, post_id=post_id, request=request, db=db, response=response
     )
 
     return result
 
 
-@router.delete("/delete-post/{post_id}")
+@router.delete("/posts/{post_id}")
 async def delete_post(
-    post_id: int, request: Request, db: AsyncSession = Depends(get_db)
+    post_id: int, request: Request, response: Response, db: AsyncSession = Depends(get_db)
 ):
-    result = await views.delete_post_view(post_id=post_id, db=db, request=request)
+    result = await views.delete_post_view(post_id=post_id, db=db, request=request, response=response)
     if result:
         return {"message": "Post deleted"}
     raise HTTPException(status_code=403, detail="Token validation error")

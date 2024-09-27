@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, validator
 from datetime import datetime
 
 
@@ -27,6 +27,18 @@ class PostList(BaseModel):
 class PostCreate(BaseModel):
     topic: str
     content: str
+
+    @validator("topic")
+    def validate_topic(cls, value):
+        if not value.strip():
+            raise ValueError("Topic cannot be empty.")
+        return value
+
+    @validator("content")
+    def validate_content(cls, value):
+        if not value.strip():
+            raise ValueError("Topic cannot be empty.")
+        return value
 
 
 class PostUpdate(BaseModel):

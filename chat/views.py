@@ -27,7 +27,9 @@ async def get_or_create_chat(sender_id: int, receiver_id: int, db: AsyncSession)
         await db.refresh(new_chat)
 
         participant_1 = models.DBChatParticipant(chat_id=new_chat.id, user_id=sender_id)
-        participant_2 = models.DBChatParticipant(chat_id=new_chat.id, user_id=receiver_id)
+        participant_2 = models.DBChatParticipant(
+            chat_id=new_chat.id, user_id=receiver_id
+        )
 
         db.add(participant_1)
         db.add(participant_2)

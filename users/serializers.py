@@ -1,5 +1,4 @@
-from pydantic import BaseModel, EmailStr
-from pydantic.v1 import validator
+from pydantic import BaseModel, EmailStr, constr, validator
 
 from posts.serializers import Post
 
@@ -13,10 +12,6 @@ def validate_password(value: str) -> str:
         raise ValueError("Password must contain at least one uppercase letter")
     if not any(char.islower() for char in value):
         raise ValueError("Password must contain at least one lowercase letter")
-    if not any(char in "!@#$%^&*()_+-=" for char in value):
-        raise ValueError(
-            "Password must contain at least one special character (!@#$%^&*()_+-=)"
-        )
     return value
 
 
@@ -29,11 +24,11 @@ class User(BaseModel):
 
 class UserCreate(BaseModel):
     email: EmailStr
-    username: str
+    username: constr(min_length=3, max_length=20)
     password: str
 
     @validator("password")
-    def validate_password(self, value):
+    def check_password(cls, value):
         return validate_password(value)
 
 
@@ -69,5 +64,5 @@ class UserPasswordEdit(BaseModel):
     new_password: str
 
     @validator("new_password")
-    def validate_new_password(self, value):
+    def validate_new_password(cls, value):
         return validate_password(value)

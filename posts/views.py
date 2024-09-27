@@ -1,4 +1,4 @@
-from fastapi import HTTPException, Request
+from fastapi import HTTPException, Request, Response
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -34,7 +34,8 @@ async def get_all_posts_view(db: AsyncSession):
 
 async def retrieve_post_view(post, db: AsyncSession):
     result = None
-    if isinstance(post, int):
+    if post.isdigit():
+        post = int(post)
         result = await db.execute(
             select(models.DBPost)
             .outerjoin(models.DBUser)
@@ -46,7 +47,7 @@ async def retrieve_post_view(post, db: AsyncSession):
             select(models.DBPost)
             .outerjoin(models.DBUser)
             .options(selectinload(models.DBPost.user))
-            .filter(models.DBPost.topic == post)
+            .filter(models.DBPost.topic.ilike(f"%{post}%"))
         )
     post = result.scalar_one_or_none()
     if post:
@@ -56,9 +57,9 @@ async def retrieve_post_view(post, db: AsyncSession):
 
 
 async def create_post_view(
-    db: AsyncSession, request: Request, post: serializers.PostCreate
+    db: AsyncSession, request: Request, response: Response, post: serializers.PostCreate
 ):
-    user_id = (await get_current_user(db=db, request=request)).id
+    user_id = (await get_current_user(db=db, request=request, response=response)).id
     new_post = models.DBPost(
         topic=post.topic,
         content=post.content,
@@ -74,9 +75,10 @@ async def edit_post_view(
     post_update: serializers.PostUpdate,
     post_id: int,
     request: Request,
+    response: Response,
     db: AsyncSession,
 ):
-    user_id = (await get_current_user(request=request, db=db)).id
+    user_id = (await get_current_user(request=request, db=db, response=response)).id
     result = await db.execute(select(models.DBPost).filter(models.DBPost.id == post_id))
     post = result.scalar_one_or_none()
 
@@ -98,10 +100,10 @@ async def edit_post_view(
     return post
 
 
-async def delete_post_view(db: AsyncSession, post_id: int, request: Request):
+async def delete_post_view(db: AsyncSession, post_id: int, request: Request, response: Response):
     result = await db.execute(select(models.DBPost).filter(models.DBPost.id == post_id))
     post = result.scalar_one_or_none()
-    user = (await get_current_user(request=request, db=db)).id
+    user = (await get_current_user(request=request, db=db, response=response)).id
     if post.user_id == user:
         await db.delete(post)
         await db.commit()
