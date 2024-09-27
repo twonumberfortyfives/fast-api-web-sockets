@@ -129,7 +129,9 @@ async def my_profile_edit_view(
 ):
     found_user = await get_current_user(request=request, response=response, db=db)
 
-    if user.username is not None:  # If there were some changes we update our user otherwise no.
+    if (
+        user.username is not None
+    ):  # If there were some changes we update our user otherwise no.
         found_user.username = user.username
     if user.email is not None:
         found_user.email = user.email
@@ -139,7 +141,9 @@ async def my_profile_edit_view(
             raise HTTPException(status_code=400, detail="Picture type not supported")
         os.makedirs("uploads", exist_ok=True)
 
-        image_path = f"uploads/{found_user.id}_{uuid.uuid4()}_{profile_picture.filename}"
+        image_path = (
+            f"uploads/{found_user.id}_{uuid.uuid4()}_{profile_picture.filename}"
+        )
         with open(image_path, "wb") as f:
             f.write(await profile_picture.read())
         found_user.profile_picture = image_path

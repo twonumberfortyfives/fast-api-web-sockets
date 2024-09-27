@@ -61,7 +61,9 @@ async def my_profile_edit(
     profile_picture: UploadFile = File(None),  # This accepts the image upload
     db: AsyncSession = Depends(get_db),
 ):
-    user = UserEdit(username=username, email=email)  # Constructing the Pydantic model instance
+    user = UserEdit(
+        username=username, email=email
+    )  # Constructing the Pydantic model instance
     updated_user = await views.my_profile_edit_view(
         request=request,
         response=response,
