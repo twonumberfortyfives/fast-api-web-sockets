@@ -1,0 +1,62 @@
+[
+    {
+        "topic": "First Post by Alice",
+        "content": "This is Alice's first post! Hello, world!",
+        "tags": "welcome, introduction, alice",
+        "user_id": 1
+    },
+    {
+        "topic": "Bob's Tech Thoughts",
+        "content": "Today, I want to share my thoughts on the latest tech trends.",
+        "tags": "technology, bob",
+        "user_id": 2
+    },
+    {
+        "topic": "Charlie's Admin Post",
+        "content": "As an admin, I will ensure the community stays friendly.",
+        "tags": "admin, community, charlie",
+        "user_id": 3
+    },
+    {
+        "topic": "David's Travel Adventures",
+        "content": "Just got back from an amazing trip to the mountains!",
+        "tags": "travel, adventure, mountains, david",
+        "user_id": 4
+    },
+    {
+        "topic": "Eve's Favorite Recipes",
+        "content": "Here are my top 5 favorite recipes that I love to cook.",
+        "tags": "cooking, recipes, eve",
+        "user_id": 5
+    },
+    {
+        "topic": "Frank's Fitness Journey",
+        "content": "Sharing my tips for staying fit and healthy.",
+        "tags": "fitness, health, journey, frank",
+        "user_id": 6
+    },
+    {
+        "topic": "Grace's Art Showcase",
+        "content": "Check out my latest artwork and inspiration!",
+        "tags": "art, showcase, inspiration, grace",
+        "user_id": 7
+    },
+    {
+        "topic": "Hank's Movie Reviews",
+        "content": "Here's my review of the latest blockbuster film!",
+        "tags": "movies, reviews, entertainment, hank",
+        "user_id": 8
+    },
+    {
+        "topic": "Isaac's Tech Innovations",
+        "content": "Discussing the future of AI and its impact.",
+        "tags": "technology, AI, innovation, isaac",
+        "user_id": 9
+    },
+    {
+        "topic": "Julia's Gardening Tips",
+        "content": "Here are some tips for starting your garden!",
+        "tags": "gardening, tips, nature, julia",
+        "user_id": 10
+    }
+]

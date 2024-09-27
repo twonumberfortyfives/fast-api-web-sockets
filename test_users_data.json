@@ -1,0 +1,72 @@
+[
+    {
+        "email": "alice@example.com",
+        "username": "Alice",
+        "profile_picture": "alice.jpg",
+        "password": "hashed_password1",
+        "role": "user"
+    },
+    {
+        "email": "bob@example.com",
+        "username": "Bob",
+        "profile_picture": "bob.jpg",
+        "password": "hashed_password2",
+        "role": "user"
+    },
+    {
+        "email": "charlie@example.com",
+        "username": "Charlie",
+        "profile_picture": "charlie.jpg",
+        "password": "hashed_password3",
+        "role": "admin"
+    },
+    {
+        "email": "david@example.com",
+        "username": "David",
+        "profile_picture": "david.jpg",
+        "password": "hashed_password4",
+        "role": "user"
+    },
+    {
+        "email": "eve@example.com",
+        "username": "Eve",
+        "profile_picture": "eve.jpg",
+        "password": "hashed_password5",
+        "role": "user"
+    },
+    {
+        "email": "frank@example.com",
+        "username": "Frank",
+        "profile_picture": "frank.jpg",
+        "password": "hashed_password6",
+        "role": "user"
+    },
+    {
+        "email": "grace@example.com",
+        "username": "Grace",
+        "profile_picture": "grace.jpg",
+        "password": "hashed_password7",
+        "role": "user"
+    },
+    {
+        "email": "hank@example.com",
+        "username": "Hank",
+        "profile_picture": "hank.jpg",
+        "password": "hashed_password8",
+        "role": "user"
+    },
+    {
+        "email": "isaac@example.com",
+        "username": "Isaac",
+        "profile_picture": "isaac.jpg",
+        "password": "hashed_password9",
+        "role": "user"
+    },
+    {
+        "email": "julia@example.com",
+        "username": "Julia",
+        "profile_picture": "julia.jpg",
+        "password": "hashed_password10",
+        "role": "user"
+    }
+]
