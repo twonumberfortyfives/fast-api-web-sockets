@@ -63,18 +63,6 @@ async def change_password(
 
 @router.post("/register")
 async def register(user: serializers.UserCreate, db: AsyncSession = Depends(get_db)):
-    db_username_validation = await views.get_user_by_username(
-        db=db, username=user.username
-    )
-    if db_username_validation:
-        raise HTTPException(
-            status_code=400, detail="Account with current username already exists!"
-        )
-    db_email_validation = await views.get_user_by_email(db=db, email=user.email)
-    if db_email_validation:
-        raise HTTPException(
-            status_code=400, detail="Account with current email already exists!"
-        )
     user = await views.register_view(db=db, user=user)
     response = JSONResponse({"message": f"{user.username} has been registered."})
     return response

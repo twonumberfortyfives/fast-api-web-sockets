@@ -68,6 +68,19 @@ async def verify_password(password: str, hashed_password: str):
 
 
 async def register_view(db: AsyncSession, user: serializers.UserCreate):
+    db_username_validation = await get_user_by_username(
+        db=db, username=user.username
+    )
+    if db_username_validation:
+        raise HTTPException(
+            status_code=400, detail="Account with current username already exists!"
+        )
+    db_email_validation = await get_user_by_email(db=db, email=user.email)
+    if db_email_validation:
+        raise HTTPException(
+            status_code=400, detail="Account with current email already exists!"
+        )
+
     hashed_password = await hash_password(user.password)
     db_user = models.DBUser(
         email=user.email,
