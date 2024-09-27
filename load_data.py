@@ -38,4 +38,6 @@ async def load_extended_sample_data(test_users_data: str, test_posts_data: str):
 if __name__ == "__main__":
     import asyncio
 
-    asyncio.run(load_extended_sample_data("test_users_data.json", "test_posts_data.json"))
+    asyncio.run(
+        load_extended_sample_data("test_users_data.json", "test_posts_data.json")
+    )
