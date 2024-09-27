@@ -129,8 +129,13 @@ async def change_password_view(
         user.password = new_hashed_password
         await db.commit()
         await db.refresh(user)
-        return True
-    return False
+        result = True
+    else:
+        result = False
+
+    if result:
+        return {"message": "Password changed successfully"}
+    raise HTTPException(status_code=401, detail="Invalid credentials")
 
 
 async def is_authenticated_view(request: Request, response: Response, db: AsyncSession):

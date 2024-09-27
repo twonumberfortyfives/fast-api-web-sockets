@@ -58,9 +58,7 @@ async def change_password(
     db: AsyncSession = Depends(get_db),
 ):
     result = await views.change_password_view(request=request, response=response, password=password, db=db)
-    if result:
-        return {"message": "Password changed successfully"}
-    raise HTTPException(status_code=401, detail="Invalid credentials")
+    return result
 
 
 @router.post("/register")
