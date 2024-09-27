@@ -29,7 +29,7 @@ async def get_all_posts_view(db: AsyncSession):
     posts = result.scalars().all()
     if posts:
         posts_with_tags = [
-            {**post.__dict__, 'tags': post.tags.split(',') if post.tags else []}
+            {**post.__dict__, "tags": post.tags.split(",") if post.tags else []}
             for post in posts
         ]
         return posts_with_tags
@@ -66,7 +66,7 @@ async def create_post_view(
 ):
     user_id = (await get_current_user(db=db, request=request, response=response)).id
     tags_with_hashtags = [f'#{tag.lstrip("#")}' for tag in post.tags]
-    tags_string = ','.join(tags_with_hashtags)
+    tags_string = ",".join(tags_with_hashtags)
     new_post = models.DBPost(
         topic=post.topic,
         content=post.content,
@@ -97,7 +97,7 @@ async def edit_post_view(
         raise HTTPException(
             status_code=403, detail="You are not allowed to edit this post"
         )
-    tags_string = ','.join(post_update.tags)
+    tags_string = ",".join(post_update.tags)
     post.tags = tags_string
     post.topic = post_update.topic
     post.content = post_update.content
