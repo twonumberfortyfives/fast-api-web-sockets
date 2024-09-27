@@ -1,5 +1,7 @@
-from datetime import timedelta
-from fastapi import HTTPException
+import os
+import uuid
+
+from fastapi import HTTPException, UploadFile
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -12,7 +14,7 @@ from dependencies import (
     get_current_user,
     create_access_token,
     create_refresh_token,
-    ACCESS_TOKEN_EXPIRE_TIME,
+    ACCESS_TOKEN_EXPIRE_TIME_MINUTES,
 )
 from users import serializers
 
@@ -100,7 +102,7 @@ async def login_view(
         if not verified_password:
             raise HTTPException(status_code=400, detail="Incorrect email or password")
 
-        access_token_expires = timedelta(seconds=ACCESS_TOKEN_EXPIRE_TIME)
+        access_token_expires = ACCESS_TOKEN_EXPIRE_TIME_MINUTES
         access_token = await create_access_token(
             data={"sub": user.email}, expires_delta=access_token_expires
         )
@@ -119,14 +121,35 @@ async def my_profile_view(request: Request, response: Response, db: AsyncSession
 
 
 async def my_profile_edit_view(
-    request: Request, response: Response, user: serializers.UserEdit, db: AsyncSession
+    request: Request,
+    response: Response,
+    user: serializers.UserEdit,
+    db: AsyncSession,
+    profile_picture: UploadFile = None,
 ):
     found_user = await get_current_user(request=request, response=response, db=db)
-    found_user.username = user.username
-    found_user.email = user.email
 
-    await db.commit()
-    await db.refresh(found_user)
+    if user.username is not None:  # If there were some changes we update our user otherwise no.
+        found_user.username = user.username
+    if user.email is not None:
+        found_user.email = user.email
+
+    if profile_picture:
+        if profile_picture.content_type not in ["image/png", "image/jpeg"]:
+            raise HTTPException(status_code=400, detail="Picture type not supported")
+        os.makedirs("uploads", exist_ok=True)
+
+        image_path = f"uploads/{found_user.id}_{uuid.uuid4()}_{profile_picture.filename}"
+        with open(image_path, "wb") as f:
+            f.write(await profile_picture.read())
+        found_user.profile_picture = image_path
+
+    try:
+        await db.commit()
+        await db.refresh(found_user)
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail="Database error")
 
     return found_user
 

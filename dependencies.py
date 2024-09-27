@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import jwt
 from fastapi import Depends, Request, HTTPException, Response
@@ -11,8 +11,8 @@ from db.models import Role
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
-ACCESS_TOKEN_EXPIRE_TIME = 5
-REFRESH_TOKEN_EXPIRE_TIME = 60
+ACCESS_TOKEN_EXPIRE_TIME_MINUTES = timedelta(minutes=15)
+REFRESH_TOKEN_EXPIRE_TIME_DAYS = timedelta(days=30)
 
 
 async def get_db() -> AsyncSession:
@@ -23,9 +23,9 @@ async def get_db() -> AsyncSession:
 async def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(seconds=ACCESS_TOKEN_EXPIRE_TIME)
+        expire = datetime.now(timezone.utc) + ACCESS_TOKEN_EXPIRE_TIME_MINUTES
 
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
@@ -33,9 +33,7 @@ async def create_access_token(data: dict, expires_delta: timedelta = None):
 
 
 async def create_refresh_token(data: dict):
-    expire = datetime.utcnow() + timedelta(
-        seconds=REFRESH_TOKEN_EXPIRE_TIME
-    )  # Very short expiration for debugging
+    expire = datetime.now(timezone.utc) + REFRESH_TOKEN_EXPIRE_TIME_DAYS
     data.update({"exp": expire})
     return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
 

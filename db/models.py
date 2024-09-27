@@ -1,4 +1,3 @@
-import datetime
 from sqlalchemy import Integer, Column, String, ForeignKey, DateTime, Enum, Text, func
 from sqlalchemy.orm import relationship, validates
 from enum import Enum as PyEnum
@@ -16,6 +15,7 @@ class DBUser(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     email = Column(String, unique=True, nullable=False)
     username = Column(String(15), unique=True, nullable=False)
+    profile_picture = Column(String, default="default.jpg")
     password = Column(String, nullable=False)
     role = Column(Enum(Role), nullable=False, default=Role.user)
     created_at = Column(DateTime, server_default=func.now())
@@ -78,7 +78,7 @@ class DBMessage(Base):
     chat_id = Column(Integer, ForeignKey("chats.id"), nullable=False)
     sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     content = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=func.now())
 
     chat = relationship("DBChat", back_populates="messages")
     sender = relationship("DBUser", back_populates="sent_messages")

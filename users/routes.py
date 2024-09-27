@@ -1,11 +1,15 @@
-from fastapi import APIRouter, Request, Depends, HTTPException, Response
+from typing import Optional
+
+from fastapi import APIRouter, Request, Depends, Response, UploadFile, File
 from fastapi.responses import JSONResponse
+from pydantic import EmailStr
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db import models
 from dependencies import get_db, require_role
 from users import views, serializers
+from users.serializers import UserEdit
 
 router = APIRouter()
 
@@ -48,17 +52,24 @@ async def my_profile(
     return user
 
 
-@router.put("/my-profile", response_model=serializers.UserEdit)
+@router.patch("/my-profile", response_model=UserEdit)
 async def my_profile_edit(
     request: Request,
     response: Response,
-    user: serializers.UserEdit,
+    username: Optional[str] = None,
+    email: Optional[EmailStr] = None,
+    profile_picture: UploadFile = File(None),  # This accepts the image upload
     db: AsyncSession = Depends(get_db),
 ):
-    user = await views.my_profile_edit_view(
-        request=request, response=response, user=user, db=db
+    user = UserEdit(username=username, email=email)  # Constructing the Pydantic model instance
+    updated_user = await views.my_profile_edit_view(
+        request=request,
+        response=response,
+        user=user,
+        profile_picture=profile_picture,
+        db=db,
     )
-    return user
+    return updated_user
 
 
 @router.patch("/my-profile/change-password")

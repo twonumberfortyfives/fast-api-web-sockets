@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, Request
+from fastapi.staticfiles import StaticFiles
 
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,6 +30,8 @@ app.add_middleware(
 app.include_router(users_router, prefix="/api", tags=["users"])
 app.include_router(posts_router, prefix="/api", tags=["posts"])
 app.include_router(chat_router, prefix="/api", tags=["chat"])
+
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 
 @app.get("/")

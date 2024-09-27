@@ -1,12 +1,12 @@
-from pydantic import BaseModel, Field, EmailStr, validator
-from datetime import datetime
+from pydantic import BaseModel, Field, EmailStr, field_validator
+from datetime import datetime, timezone
 
 
 class Post(BaseModel):
     id: int
     topic: str
     content: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     user_id: int
 
 
@@ -20,7 +20,7 @@ class PostList(BaseModel):
     id: int
     topic: str
     content: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     user: UserForPostList
 
 
@@ -28,13 +28,13 @@ class PostCreate(BaseModel):
     topic: str
     content: str
 
-    @validator("topic")
+    @field_validator("topic")
     def validate_topic(cls, value):
         if not value.strip():
             raise ValueError("Topic cannot be empty.")
         return value
 
-    @validator("content")
+    @field_validator("content")
     def validate_content(cls, value):
         if not value.strip():
             raise ValueError("Topic cannot be empty.")
