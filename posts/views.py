@@ -100,7 +100,9 @@ async def edit_post_view(
     return post
 
 
-async def delete_post_view(db: AsyncSession, post_id: int, request: Request, response: Response):
+async def delete_post_view(
+    db: AsyncSession, post_id: int, request: Request, response: Response
+):
     is_deleted = False
     result = await db.execute(select(models.DBPost).filter(models.DBPost.id == post_id))
     post = result.scalar_one_or_none()

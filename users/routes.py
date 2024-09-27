@@ -11,8 +11,12 @@ router = APIRouter()
 
 
 @router.get("/is-authenticated")
-async def is_authenticated(request: Request, response: Response, db: AsyncSession = Depends(get_db)):
-    is_user = await views.is_authenticated_view(request=request, response=response, db=db)
+async def is_authenticated(
+    request: Request, response: Response, db: AsyncSession = Depends(get_db)
+):
+    is_user = await views.is_authenticated_view(
+        request=request, response=response, db=db
+    )
     return is_user
 
 
@@ -37,16 +41,23 @@ async def retrieve_user(user_id: int, db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/my-profile", response_model=serializers.UserList)
-async def my_profile(request: Request, response: Response, db: AsyncSession = Depends(get_db)):
+async def my_profile(
+    request: Request, response: Response, db: AsyncSession = Depends(get_db)
+):
     user = await views.my_profile_view(request=request, response=response, db=db)
     return user
 
 
 @router.put("/my-profile", response_model=serializers.UserEdit)
 async def my_profile_edit(
-    request: Request, response: Response, user: serializers.UserEdit, db: AsyncSession = Depends(get_db)
+    request: Request,
+    response: Response,
+    user: serializers.UserEdit,
+    db: AsyncSession = Depends(get_db),
 ):
-    user = await views.my_profile_edit_view(request=request, response=response, user=user, db=db)
+    user = await views.my_profile_edit_view(
+        request=request, response=response, user=user, db=db
+    )
     return user
 
 
@@ -57,7 +68,9 @@ async def change_password(
     password: serializers.UserPasswordEdit,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await views.change_password_view(request=request, response=response, password=password, db=db)
+    result = await views.change_password_view(
+        request=request, response=response, password=password, db=db
+    )
     return result
 
 

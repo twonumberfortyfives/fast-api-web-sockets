@@ -19,9 +19,14 @@ async def retrieve_post(post, db: AsyncSession = Depends(get_db)):
 
 @router.post("/posts", response_model=serializers.Post)
 async def create_post(
-    request: Request, response: Response, post: serializers.PostCreate, db: AsyncSession = Depends(get_db)
+    request: Request,
+    response: Response,
+    post: serializers.PostCreate,
+    db: AsyncSession = Depends(get_db),
 ):
-    response = await views.create_post_view(db=db, request=request, post=post, response=response)
+    response = await views.create_post_view(
+        db=db, request=request, post=post, response=response
+    )
     return response
 
 
@@ -34,7 +39,11 @@ async def edit_post(
     db: AsyncSession = Depends(get_db),
 ):
     result = await views.edit_post_view(
-        post_update=post_update, post_id=post_id, request=request, db=db, response=response
+        post_update=post_update,
+        post_id=post_id,
+        request=request,
+        db=db,
+        response=response,
     )
 
     return result
@@ -42,8 +51,12 @@ async def edit_post(
 
 @router.delete("/posts/{post_id}")
 async def delete_post(
-    post_id: int, request: Request, response: Response, db: AsyncSession = Depends(get_db)
+    post_id: int,
+    request: Request,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
 ):
-    result = await views.delete_post_view(post_id=post_id, db=db, request=request, response=response)
+    result = await views.delete_post_view(
+        post_id=post_id, db=db, request=request, response=response
+    )
     return result
-

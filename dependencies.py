@@ -60,7 +60,9 @@ async def refresh_token_view(refresh_token: str):
     return new_access_token, new_refresh_token
 
 
-async def get_current_user(request: Request, response: Response, db: AsyncSession = Depends(get_db)):
+async def get_current_user(
+    request: Request, response: Response, db: AsyncSession = Depends(get_db)
+):
     access_token = request.cookies.get("access_token")
     refresh_token = request.cookies.get("refresh_token")
 
@@ -84,7 +86,9 @@ async def get_current_user(request: Request, response: Response, db: AsyncSessio
 
         # Changing the variable from try block. Putting there new refreshed access token!
         user_data = jwt.decode(
-            new_access_token, os.getenv("SECRET_KEY"), algorithms=[os.getenv("ALGORITHM")]
+            new_access_token,
+            os.getenv("SECRET_KEY"),
+            algorithms=[os.getenv("ALGORITHM")],
         )
 
     except jwt.PyJWTError:
