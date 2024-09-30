@@ -53,21 +53,15 @@ class UserList(BaseModel):
     email: EmailStr
     profile_picture: str
     username: str
-    posts: list[Post] = []
-
-
-class UserMyProfile(BaseModel):
-    id: int
-    email: EmailStr
-    profile_picture: str
-    username: str
     bio: str | None
+    posts: list[Post] = []
 
 
 class UserEdit(BaseModel):
     email: EmailStr | None
     username: constr(min_length=3, max_length=30) | None
     bio: constr(max_length=500) | None
+    posts: list[Post] = []
 
     # Custom validator for username
     @field_validator("username")

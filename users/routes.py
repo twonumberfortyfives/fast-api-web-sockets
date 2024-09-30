@@ -36,13 +36,13 @@ async def get_users(db: AsyncSession = Depends(get_db)):
     return users
 
 
-@router.get("/users/{user_id}", response_model=serializers.UserMyProfile)
+@router.get("/users/{user_id}", response_model=serializers.UserList)
 async def retrieve_user(user_id: int, db: AsyncSession = Depends(get_db)):
     user = await views.retrieve_user_view(db=db, user_id=user_id)
     return user
 
 
-@router.get("/my-profile", response_model=serializers.UserMyProfile)
+@router.get("/my-profile", response_model=serializers.UserList)
 async def my_profile(
     request: Request, response: Response, db: AsyncSession = Depends(get_db)
 ):

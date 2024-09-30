@@ -92,7 +92,7 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-@app.websocket("/ws/{receiver_id}")
+@app.websocket("/send-message/{receiver_id}")
 async def websocket_endpoint(
     websocket: WebSocket, receiver_id: int, db: AsyncSession = Depends(get_db)
 ):
@@ -119,16 +119,11 @@ async def websocket_endpoint(
 
     user_email = user_data["sub"]
     try:
-        await manager.send_personal_message(
-            f"Connected as: {user_email}", websocket, db, receiver_id
-        )
-
         while True:
             data = await websocket.receive_text()
             await manager.send_personal_message(
-                f"You wrote: {data}", websocket, db, receiver_id
+                f"{data}", websocket, db, receiver_id
             )
-            await manager.broadcast(f"Client #{user_email} says: {data}")
     except WebSocketDisconnect:
         manager.disconnect(websocket)
         await manager.broadcast(f"Client {user_email} left the chat")
