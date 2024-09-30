@@ -26,14 +26,10 @@ class DBUser(Base):
 
     # Specify foreign keys explicitly
     sent_messages = relationship(
-        "DBMessage",
-        foreign_keys="[DBMessage.sender_id]",
-        back_populates="sender"
+        "DBMessage", foreign_keys="[DBMessage.sender_id]", back_populates="sender"
     )
     received_messages = relationship(
-        "DBMessage",
-        foreign_keys="[DBMessage.receiver_id]",
-        back_populates="receiver"
+        "DBMessage", foreign_keys="[DBMessage.receiver_id]", back_populates="receiver"
     )
 
     participants = relationship("DBChatParticipant", back_populates="user")
@@ -54,11 +50,13 @@ class DBPost(Base):
 
     @property
     def tags(self):
-        return self._tags.split(',') if self._tags else []  # Correctly reference the private attribute
+        return (
+            self._tags.split(",") if self._tags else []
+        )  # Correctly reference the private attribute
 
     @tags.setter
     def tags(self, tags):
-        self._tags = ','.join(tags)
+        self._tags = ",".join(tags)
 
     @validates("topic", "content")
     def validate_topic(self, key, value):
@@ -104,12 +102,8 @@ class DBMessage(Base):
 
     # Specify foreign keys explicitly for sender and receiver
     sender = relationship(
-        "DBUser",
-        foreign_keys=[sender_id],
-        back_populates="sent_messages"
+        "DBUser", foreign_keys=[sender_id], back_populates="sent_messages"
     )
     receiver = relationship(
-        "DBUser",
-        foreign_keys=[receiver_id],
-        back_populates="received_messages"
+        "DBUser", foreign_keys=[receiver_id], back_populates="received_messages"
     )

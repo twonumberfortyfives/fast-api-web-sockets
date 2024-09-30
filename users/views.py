@@ -142,7 +142,9 @@ async def my_profile_edit_view(
 
         os.makedirs("uploads", exist_ok=True)
 
-        image_path = f"uploads/{found_user.id}_{uuid.uuid4()}_{profile_picture.filename}"
+        image_path = (
+            f"uploads/{found_user.id}_{uuid.uuid4()}_{profile_picture.filename}"
+        )
 
         with open(image_path, "wb") as f:
             f.write(await profile_picture.read())

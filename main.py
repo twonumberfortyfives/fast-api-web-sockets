@@ -2,7 +2,15 @@ import os
 from datetime import datetime
 
 import jwt
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, Request, WebSocketException, Cookie
+from fastapi import (
+    FastAPI,
+    WebSocket,
+    WebSocketDisconnect,
+    Depends,
+    Request,
+    WebSocketException,
+    Cookie,
+)
 from fastapi.staticfiles import StaticFiles
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -53,7 +61,9 @@ class ConnectionManager:
     def disconnect(self, websocket: WebSocket):
         self.active_connections.remove(websocket)
 
-    async def send_personal_message(self, message: str, websocket: WebSocket, db: AsyncSession, receiver_id: int):
+    async def send_personal_message(
+        self, message: str, websocket: WebSocket, db: AsyncSession, receiver_id: int
+    ):
         access_token = websocket.cookies.get("access_token")
         user_data = jwt.decode(
             access_token,
@@ -83,14 +93,16 @@ manager = ConnectionManager()
 
 
 @app.websocket("/ws/{receiver_id}")
-async def websocket_endpoint(websocket: WebSocket, receiver_id: int, db: AsyncSession = Depends(get_db)):
+async def websocket_endpoint(
+    websocket: WebSocket, receiver_id: int, db: AsyncSession = Depends(get_db)
+):
     await manager.connect(websocket)
     access_token = websocket.cookies.get("access_token")
     if not access_token:
         await websocket.close(code=1008)
         return
     if isinstance(access_token, str):
-        access_token = access_token.encode('utf-8')
+        access_token = access_token.encode("utf-8")
 
     try:
         user_data = jwt.decode(
@@ -107,11 +119,15 @@ async def websocket_endpoint(websocket: WebSocket, receiver_id: int, db: AsyncSe
 
     user_email = user_data["sub"]
     try:
-        await manager.send_personal_message(f"Connected as: {user_email}", websocket, db, receiver_id)
+        await manager.send_personal_message(
+            f"Connected as: {user_email}", websocket, db, receiver_id
+        )
 
         while True:
             data = await websocket.receive_text()
-            await manager.send_personal_message(f"You wrote: {data}", websocket, db, receiver_id)
+            await manager.send_personal_message(
+                f"You wrote: {data}", websocket, db, receiver_id
+            )
             await manager.broadcast(f"Client #{user_email} says: {data}")
     except WebSocketDisconnect:
         manager.disconnect(websocket)

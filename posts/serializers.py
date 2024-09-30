@@ -12,8 +12,9 @@ class Post(BaseModel):
 
     class Config:
         json_encoders = {
-            datetime: lambda v: v.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z')
-
+            datetime: lambda v: v.astimezone(timezone.utc)
+            .isoformat()
+            .replace("+00:00", "Z")
         }
 
 
@@ -33,7 +34,9 @@ class PostList(BaseModel):
 
     class Config:
         json_encoders = {
-            datetime: lambda v: v.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z')
+            datetime: lambda v: v.astimezone(timezone.utc)
+            .isoformat()
+            .replace("+00:00", "Z")
         }
 
 
