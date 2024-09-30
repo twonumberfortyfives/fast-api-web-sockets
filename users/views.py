@@ -133,8 +133,7 @@ async def my_profile_edit_view(
         found_user.username = user.username
     if user.email is not None:
         found_user.email = user.email
-    if user.bio is not None:
-        found_user.bio = user.bio
+    found_user.bio = user.bio
 
     if profile_picture and not profile_picture != "":
         if profile_picture.content_type not in ["image/png", "image/jpeg"]:
