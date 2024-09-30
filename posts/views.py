@@ -46,6 +46,8 @@ async def retrieve_post_view(post, db: AsyncSession):
             .options(selectinload(models.DBPost.user))
             .filter(models.DBPost.id == post)
         )
+        post = result.scalar_one_or_none()
+
     if isinstance(post, str):
         result = await db.execute(
             select(models.DBPost)
@@ -53,8 +55,12 @@ async def retrieve_post_view(post, db: AsyncSession):
             .options(selectinload(models.DBPost.user))
             .filter(models.DBPost.topic.ilike(f"%{post}%"))
         )
-    post = result.scalar_one_or_none()
-    if post:
+        post = result.scalars().all()
+    if isinstance(post, list):  # If post is a list of objects
+        for p in post:
+            p.tags = p.tags.split(",")
+        return post
+    elif post:  # If post is a single object
         post.tags = post.tags.split(",")
         return post
     else:
