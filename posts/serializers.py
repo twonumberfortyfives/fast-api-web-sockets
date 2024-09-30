@@ -10,6 +10,11 @@ class Post(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     user_id: int
 
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z')
+
+        }
 
 class UserForPostList(BaseModel):
     id: int
@@ -24,6 +29,11 @@ class PostList(BaseModel):
     tags: list[str]
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     user: UserForPostList
+
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z')
+        }
 
 
 class PostCreate(BaseModel):
