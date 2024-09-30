@@ -77,6 +77,13 @@ class UserEdit(BaseModel):
                 raise ValueError("Username cannot contain spaces")
         return username
 
+    @field_validator("email")
+    def validate_email(cls, email):
+        if email:
+            if ' ' in email:
+                raise ValueError("Email cannot contain spaces")
+        return email
+
 
 class UserPasswordEdit(BaseModel):
     old_password: str

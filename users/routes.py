@@ -1,8 +1,6 @@
-from typing import Optional
-
-from fastapi import APIRouter, Request, Depends, Response, UploadFile, File, Body
+from fastapi import APIRouter, Request, Depends, Response, UploadFile, File
 from fastapi.responses import JSONResponse
-from pydantic import EmailStr
+from fastapi.exceptions import HTTPException
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -62,11 +60,15 @@ async def my_profile_edit(
     profile_picture: UploadFile | str = File(None),
     db: AsyncSession = Depends(get_db),
 ):
-    user = serializers.UserEdit(
-        username=username,
-        email=email,
-        bio=bio,
-    )
+    try:
+        user = serializers.UserEdit(
+            username=username,
+            email=email,
+            bio=bio,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
     updated_user = await views.my_profile_edit_view(
         request=request,
         response=response,
