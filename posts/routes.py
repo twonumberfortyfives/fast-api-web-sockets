@@ -12,7 +12,7 @@ async def get_all_posts(db: AsyncSession = Depends(get_db)):
     return await views.get_all_posts_view(db)
 
 
-@router.get("/posts/{post}", response_model=list[serializers.PostList])
+@router.get("/posts/{post}", response_model=list[serializers.PostList] | serializers.PostList)
 async def retrieve_post(post, db: AsyncSession = Depends(get_db)):
     return await views.retrieve_post_view(post, db)
 

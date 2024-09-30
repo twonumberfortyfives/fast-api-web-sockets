@@ -6,7 +6,7 @@ class Post(BaseModel):
     id: int
     topic: str
     content: str
-    tags: str
+    tags: list[str]
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     user_id: int
 
@@ -15,6 +15,7 @@ class Post(BaseModel):
             datetime: lambda v: v.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z')
 
         }
+
 
 class UserForPostList(BaseModel):
     id: int

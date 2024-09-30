@@ -1,4 +1,5 @@
 from sqlalchemy import Integer, Column, String, ForeignKey, DateTime, Enum, Text, func
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship, validates
 from enum import Enum as PyEnum
 from db.engine import Base
@@ -17,6 +18,7 @@ class DBUser(Base):
     username = Column(String(15), unique=True, nullable=False)
     profile_picture = Column(String, default="default.jpg")
     password = Column(String, nullable=False)
+    bio = Column(String(500), nullable=True)
     role = Column(Enum(Role), nullable=False, default=Role.user)
     created_at = Column(DateTime, server_default=func.now())
 
@@ -43,12 +45,20 @@ class DBPost(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     topic = Column(String(255), nullable=True)
     content = Column(String(500), nullable=False)
-    tags = Column(String(100), nullable=True)
+    _tags = Column(String(500), nullable=True)
     user_id = Column(
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     created_at = Column(DateTime, server_default=func.now())
     user = relationship("DBUser", back_populates="posts")
+
+    @property
+    def tags(self):
+        return self._tags.split(',') if self._tags else []  # Correctly reference the private attribute
+
+    @tags.setter
+    def tags(self, tags):
+        self._tags = ','.join(tags)
 
     @validates("topic", "content")
     def validate_topic(self, key, value):

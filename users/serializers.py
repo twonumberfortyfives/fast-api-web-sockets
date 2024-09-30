@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel, EmailStr, constr, field_validator
 
 from posts.serializers import Post
@@ -58,10 +56,26 @@ class UserList(BaseModel):
     posts: list[Post] = []
 
 
+class UserMyProfile(BaseModel):
+    id: int
+    email: EmailStr
+    profile_picture: str
+    username: str
+    bio: str | None
+
+
 class UserEdit(BaseModel):
-    email: Optional[EmailStr] = None
-    username: Optional[constr(min_length=3, max_length=30)] = None
-    profile_picture: Optional[str] = None
+    email: EmailStr | None
+    username: constr(min_length=3, max_length=30) | None
+    bio: constr(max_length=500) | None
+
+    # Custom validator for username
+    @field_validator("username")
+    def validate_username(cls, username):
+        if username:
+            if ' ' in username:
+                raise ValueError("Username cannot contain spaces")
+        return username
 
 
 class UserPasswordEdit(BaseModel):

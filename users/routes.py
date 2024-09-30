@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter, Request, Depends, Response, UploadFile, File
+from fastapi import APIRouter, Request, Depends, Response, UploadFile, File, Body
 from fastapi.responses import JSONResponse
 from pydantic import EmailStr
 
@@ -38,13 +38,13 @@ async def get_users(db: AsyncSession = Depends(get_db)):
     return users
 
 
-@router.get("/users/{user_id}", response_model=serializers.UserList)
+@router.get("/users/{user_id}", response_model=serializers.UserMyProfile)
 async def retrieve_user(user_id: int, db: AsyncSession = Depends(get_db)):
     user = await views.retrieve_user_view(db=db, user_id=user_id)
     return user
 
 
-@router.get("/my-profile", response_model=serializers.UserList)
+@router.get("/my-profile", response_model=serializers.UserMyProfile)
 async def my_profile(
     request: Request, response: Response, db: AsyncSession = Depends(get_db)
 ):
@@ -56,14 +56,17 @@ async def my_profile(
 async def my_profile_edit(
     request: Request,
     response: Response,
-    username: Optional[str] = None,
-    email: Optional[EmailStr] = None,
-    profile_picture: UploadFile = File(None),  # This accepts the image upload
+    username: str = None,
+    email: str = None,
+    bio: str = None,
+    profile_picture: UploadFile | str = File(None),
     db: AsyncSession = Depends(get_db),
 ):
-    user = UserEdit(
-        username=username, email=email
-    )  # Constructing the Pydantic model instance
+    user = serializers.UserEdit(
+        username=username,
+        email=email,
+        bio=bio,
+    )
     updated_user = await views.my_profile_edit_view(
         request=request,
         response=response,
