@@ -21,11 +21,19 @@ class DBUser(Base):
     created_at = Column(DateTime, server_default=func.now())
 
     posts = relationship("DBPost", back_populates="user", cascade="all, delete-orphan")
+
+    # Specify foreign keys explicitly
     sent_messages = relationship(
-        "DBMessage", foreign_keys="[DBMessage.sender_id]", back_populates="sender"
+        "DBMessage",
+        foreign_keys="[DBMessage.sender_id]",
+        back_populates="sender"
+    )
+    received_messages = relationship(
+        "DBMessage",
+        foreign_keys="[DBMessage.receiver_id]",
+        back_populates="receiver"
     )
 
-    # Removed received_messages to avoid confusion, as it's implicit in the chat structure
     participants = relationship("DBChatParticipant", back_populates="user")
 
 
@@ -78,10 +86,20 @@ class DBMessage(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     chat_id = Column(Integer, ForeignKey("chats.id"), nullable=False)
     sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    receiver_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     content = Column(Text, nullable=False)
     created_at = Column(DateTime, default=func.now())
 
     chat = relationship("DBChat", back_populates="messages")
-    sender = relationship("DBUser", back_populates="sent_messages")
 
-    # Removed receiver_id as it's not explicitly needed
+    # Specify foreign keys explicitly for sender and receiver
+    sender = relationship(
+        "DBUser",
+        foreign_keys=[sender_id],
+        back_populates="sent_messages"
+    )
+    receiver = relationship(
+        "DBUser",
+        foreign_keys=[receiver_id],
+        back_populates="received_messages"
+    )

@@ -1,10 +1,13 @@
+import os
 from datetime import datetime
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, Request
+import jwt
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, Request, WebSocketException, Cookie
 from fastapi.staticfiles import StaticFiles
 
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
 from db import models
 from dependencies import get_db, get_current_user
@@ -12,7 +15,7 @@ from users.routes import router as users_router
 from posts.routes import router as posts_router
 from chat.routes import router as chat_router
 from chat.views import get_or_create_chat
-
+from users.views import get_user_by_email
 
 app = FastAPI()
 
@@ -41,60 +44,75 @@ async def root():
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: dict[int, WebSocket] = {}
+        self.active_connections: list[WebSocket] = []
 
-    async def connect(self, websocket: WebSocket, user_id: int):
+    async def connect(self, websocket: WebSocket):
         await websocket.accept()
-        self.active_connections[user_id] = websocket
+        self.active_connections.append(websocket)
 
-    def disconnect(self, user_id: int):
-        self.active_connections.pop(user_id, None)
+    def disconnect(self, websocket: WebSocket):
+        self.active_connections.remove(websocket)
 
-    async def send_personal_message(self, message: str, websocket: WebSocket):
+    async def send_personal_message(self, message: str, websocket: WebSocket, db: AsyncSession, receiver_id: int):
+        access_token = websocket.cookies.get("access_token")
+        user_data = jwt.decode(
+            access_token,
+            os.getenv("SECRET_KEY"),
+            algorithms=[os.getenv("ALGORITHM")],
+        )
+        user_email = user_data.get("sub")
+        user_id = (await get_user_by_email(db=db, email=user_email)).id
+
+        db_message = models.DBMessage(
+            chat_id=1,
+            sender_id=user_id,
+            receiver_id=receiver_id,
+            content=message,
+        )
+        db.add(db_message)
+        await db.commit()
+        await db.refresh(db_message)
         await websocket.send_text(message)
 
-    async def send_message_to_user(self, user_id: int, message: str):
-        connection = self.active_connections.get(user_id)
-        if connection:
+    async def broadcast(self, message: str):
+        for connection in self.active_connections:
             await connection.send_text(message)
 
 
 manager = ConnectionManager()
 
 
-@app.websocket("/ws/{sender_id}/{receiver_id}")
-async def chat(
-    request: Request,
-    websocket: WebSocket,
-    sender_id: int,
-    receiver_id: int,
-    db: AsyncSession = Depends(get_db),
-):
-    try:
-        # Authenticate user via token or other method
-        user_id = await get_current_user(request=request, db=db)
-        if user_id != sender_id:
-            # Reject connection if sender ID doesn't match authenticated user
-            await websocket.close(code=403)
-            return
+@app.websocket("/ws/{receiver_id}")
+async def websocket_endpoint(websocket: WebSocket, receiver_id: int, db: AsyncSession = Depends(get_db)):
+    await manager.connect(websocket)
+    access_token = websocket.cookies.get("access_token")
+    if not access_token:
+        await websocket.close(code=1008)
+        return
+    if isinstance(access_token, str):
+        access_token = access_token.encode('utf-8')
 
-        # Continue if authentication succeeds
-        await manager.connect(websocket, sender_id)
+    try:
+        user_data = jwt.decode(
+            access_token,
+            os.getenv("SECRET_KEY"),
+            algorithms=[os.getenv("ALGORITHM")],
+        )
+    except jwt.ExpiredSignatureError:
+        await websocket.close(code=1008)
+        return
+    except jwt.InvalidTokenError:
+        await websocket.close(code=1008)
+        return
+
+    user_email = user_data["sub"]
+    try:
+        await manager.send_personal_message(f"Connected as: {user_email}", websocket, db, receiver_id)
+
         while True:
             data = await websocket.receive_text()
-
-            chat = await get_or_create_chat(sender_id, receiver_id, db)
-
-            new_message = models.DBMessage(
-                chat_id=chat.id,
-                sender_id=sender_id,
-                content=data,
-                created_at=datetime.utcnow(),
-            )
-            db.add(new_message)
-            await db.commit()
-            await db.refresh(new_message)
-            await manager.send_message_to_user(receiver_id, data)
-
+            await manager.send_personal_message(f"You wrote: {data}", websocket, db, receiver_id)
+            await manager.broadcast(f"Client #{user_email} says: {data}")
     except WebSocketDisconnect:
-        manager.disconnect(sender_id)
+        manager.disconnect(websocket)
+        await manager.broadcast(f"Client {user_email} left the chat")
