@@ -15,7 +15,7 @@ class DBUser(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     email = Column(String, unique=True, nullable=False)
-    username = Column(String(15), unique=True, nullable=False)
+    username = Column(String(30), unique=True, nullable=False)
     profile_picture = Column(String, default="default.jpg")
     password = Column(String, nullable=False)
     bio = Column(String(500), nullable=True)
@@ -50,13 +50,11 @@ class DBPost(Base):
 
     @property
     def tags(self):
-        return (
-            self._tags.split(",") if self._tags else []
-        )  # Correctly reference the private attribute
+        return [tag.strip() for tag in self._tags.split(",")] if self._tags else []
 
     @tags.setter
     def tags(self, tags):
-        self._tags = ",".join(tags)
+        self._tags = ",".join(tag.strip() for tag in tags)
 
     @validates("topic", "content")
     def validate_topic(self, key, value):

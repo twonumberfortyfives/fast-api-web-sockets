@@ -1,72 +1,139 @@
-[
+{
+  "users": [
     {
-        "email": "alice@example.com",
-        "username": "Alice",
-        "profile_picture": "alice.jpg",
-        "password": "hashed_password1",
-        "role": "user"
+      "id": 1,
+      "email": "john.doe@example.com",
+      "username": "john_doe",
+      "profile_picture": "john.jpg",
+      "password": "securePassword123",
+      "bio": "I'm a software developer who loves coding in Python and JavaScript.",
+      "role": "user"
     },
     {
-        "email": "bob@example.com",
-        "username": "Bob",
-        "profile_picture": "bob.jpg",
-        "password": "hashed_password2",
-        "role": "user"
+      "id": 2,
+      "email": "jane.doe@example.com",
+      "username": "jane_doe",
+      "profile_picture": "jane.jpg",
+      "password": "securePassword456",
+      "bio": "Data scientist and AI enthusiast with a passion for deep learning.",
+      "role": "admin"
     },
     {
-        "email": "charlie@example.com",
-        "username": "Charlie",
-        "profile_picture": "charlie.jpg",
-        "password": "hashed_password3",
-        "role": "admin"
+      "id": 3,
+      "email": "alice@example.com",
+      "username": "alice_wonder",
+      "profile_picture": "alice.jpg",
+      "password": "passwordWonderland",
+      "bio": "Backend developer focusing on building robust APIs and scalable systems.",
+      "role": "user"
     },
     {
-        "email": "david@example.com",
-        "username": "David",
-        "profile_picture": "david.jpg",
-        "password": "hashed_password4",
-        "role": "user"
+      "id": 4,
+      "email": "bob.builder@example.com",
+      "username": "bob_builder",
+      "profile_picture": "bob.jpg",
+      "password": "bobCanBuild123",
+      "bio": "Full-stack developer with expertise in DevOps and cloud infrastructure.",
+      "role": "user"
     },
     {
-        "email": "eve@example.com",
-        "username": "Eve",
-        "profile_picture": "eve.jpg",
-        "password": "hashed_password5",
-        "role": "user"
+      "id": 5,
+      "email": "charlie123@example.com",
+      "username": "charlie_developer",
+      "profile_picture": "charlie.jpg",
+      "password": "secureCharliePass",
+      "bio": "Frontend developer with a love for UI/UX design and animations.",
+      "role": "admin"
     },
     {
-        "email": "frank@example.com",
-        "username": "Frank",
-        "profile_picture": "frank.jpg",
-        "password": "hashed_password6",
-        "role": "user"
+      "id": 6,
+      "email": "diana.queen@example.com",
+      "username": "diana_queen",
+      "profile_picture": "diana.jpg",
+      "password": "dianaPass789",
+      "bio": "Machine learning engineer interested in natural language processing.",
+      "role": "user"
     },
     {
-        "email": "grace@example.com",
-        "username": "Grace",
-        "profile_picture": "grace.jpg",
-        "password": "hashed_password7",
-        "role": "user"
+      "id": 7,
+      "email": "evan.coder@example.com",
+      "username": "evan_coder",
+      "profile_picture": "evan.jpg",
+      "password": "evanSecure123",
+      "bio": "Game developer with a focus on graphics and gameplay mechanics.",
+      "role": "admin"
     },
     {
-        "email": "hank@example.com",
-        "username": "Hank",
-        "profile_picture": "hank.jpg",
-        "password": "hashed_password8",
-        "role": "user"
+      "id": 8,
+      "email": "frank.artist@example.com",
+      "username": "frank_artist",
+      "profile_picture": "frank.jpg",
+      "password": "frankArtPass",
+      "bio": "Digital artist exploring the intersection of technology and creativity.",
+      "role": "user"
     },
     {
-        "email": "isaac@example.com",
-        "username": "Isaac",
-        "profile_picture": "isaac.jpg",
-        "password": "hashed_password9",
-        "role": "user"
+      "id": 9,
+      "email": "george.cloud@example.com",
+      "username": "george_cloud",
+      "profile_picture": "george.jpg",
+      "password": "georgeCloud789",
+      "bio": "Cloud architect with expertise in microservices and containerization.",
+      "role": "admin"
     },
     {
-        "email": "julia@example.com",
-        "username": "Julia",
-        "profile_picture": "julia.jpg",
-        "password": "hashed_password10",
-        "role": "user"
+      "id": 10,
+      "email": "hannah.crypto@example.com",
+      "username": "hannah_crypto",
+      "profile_picture": "hannah.jpg",
+      "password": "hannahCrypto123",
+      "bio": "Blockchain developer and crypto enthusiast building decentralized apps.",
+      "role": "user"
+    },
+    {
+      "id": 11,
+      "email": "ivan.ai@example.com",
+      "username": "ivan_ai",
+      "profile_picture": "ivan.jpg",
+      "password": "ivanAiPass",
+      "bio": "AI researcher specializing in reinforcement learning and robotics.",
+      "role": "admin"
+    },
+    {
+      "id": 12,
+      "email": "julia.python@example.com",
+      "username": "julia_python",
+      "profile_picture": "julia.jpg",
+      "password": "juliaPython123",
+      "bio": "Python developer passionate about data analysis and automation.",
+      "role": "user"
+    },
+    {
+      "id": 13,
+      "email": "kevin.devops@example.com",
+      "username": "kevin_devops",
+      "profile_picture": "kevin.jpg",
+      "password": "kevinDevOpsPass",
+      "bio": "DevOps engineer with a focus on CI/CD pipelines and Kubernetes.",
+      "role": "user"
+    },
+    {
+      "id": 14,
+      "email": "lisa.webdev@example.com",
+      "username": "lisa_webdev",
+      "profile_picture": "lisa.jpg",
+      "password": "lisaWebDevPass",
+      "bio": "Web developer focusing on performance optimization and accessibility.",
+      "role": "admin"
+    },
+    {
+      "id": 15,
+      "email": "mike.robotics@example.com",
+      "username": "mike_robotics",
+      "profile_picture": "mike.jpg",
+      "password": "mikeRoboticsPass",
+      "bio": "Robotics engineer working on autonomous systems and AI integration.",
+      "role": "user"
     }
-]
+  ]
+}
