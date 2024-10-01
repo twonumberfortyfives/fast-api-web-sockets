@@ -1,8 +1,8 @@
-from sqlalchemy import Integer, Column, String, ForeignKey, DateTime, Enum, Text, func
-from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy import Integer, Column, String, ForeignKey, DateTime, Text, func
 from sqlalchemy.orm import relationship, validates
-from enum import Enum as PyEnum
 from db.engine import Base
+from sqlalchemy.dialects.postgresql import ENUM
+from enum import Enum as PyEnum
 
 
 class Role(PyEnum):
@@ -19,7 +19,7 @@ class DBUser(Base):
     profile_picture = Column(String, default="default.jpg")
     password = Column(String, nullable=False)
     bio = Column(String(500), nullable=True)
-    role = Column(Enum(Role), nullable=False, default=Role.user)
+    role = Column(ENUM(Role), nullable=False, default=Role.user)
     created_at = Column(DateTime, server_default=func.now())
 
     posts = relationship("DBPost", back_populates="user", cascade="all, delete-orphan")

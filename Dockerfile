@@ -1,20 +1,20 @@
-# Используйте официальный образ Python в качестве базового
-FROM python:3.11-slim
+# Use an official Python runtime as a parent image
+FROM python:3.10-slim
 
-# Установите рабочую директорию
+# Set the working directory
 WORKDIR /app
 
-# Скопируйте зависимости
+# Copy the requirements file into the container
 COPY requirements.txt .
 
-# Установите зависимости
+# Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Скопируйте весь проект в контейнер
+# Install PostgreSQL client for pg_isready
+RUN apt-get update && apt-get install -y postgresql-client
+
+# Copy the current directory contents into the container at /app
 COPY . .
 
-# Укажите команду для запуска вашего FastAPI приложения
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
-
-# Откройте порт, на котором будет работать приложение
-EXPOSE 8000
+# Run the application using pg_isready to wait for PostgreSQL
+CMD ["sh", "-c", "until pg_isready -h postgres -p 5432; do echo waiting for postgres; sleep 2; done; uvicorn main:app --host 0.0.0.0 --port 8000 --reload"]
