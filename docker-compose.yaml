@@ -21,9 +21,7 @@ services:
       - ./alembic/versions:/app/alembic/versions
 
   postgres:
-    build:
-      context: db
-      dockerfile: Dockerfile
+    image: postgres:14-alpine
     ports:
       - "5432:5432"
     environment:
