@@ -20,7 +20,6 @@ site_build
 venv
 docs.zip
 archive.zip
-postgres_data
 # vim temporary files
 *~
 .*.sw?
