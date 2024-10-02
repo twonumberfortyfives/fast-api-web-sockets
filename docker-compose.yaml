@@ -1,3 +1,6 @@
+version: '3.8'  # Specify the version of the Docker Compose file format
+
+
 services:
   web:
     build:

@@ -93,9 +93,13 @@ async def edit_post_view(
         raise HTTPException(
             status_code=403, detail="You are not allowed to edit this post"
         )
-    post.tags = post_update.tags
-    post.topic = post_update.topic
-    post.content = post_update.content
+
+    if not post_update.tags == "":
+        post.tags = post_update.tags
+    if not post_update.topic == "":
+        post.topic = post_update.topic
+    if not post_update.content == "":
+        post.content = post_update.content
 
     db.add(post)
     await db.commit()
