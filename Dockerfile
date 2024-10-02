@@ -17,4 +17,4 @@ RUN apt-get update && apt-get install -y postgresql-client
 COPY . .
 
 # Run the application using pg_isready to wait for PostgreSQL
-CMD ["sh", "-c", "until pg_isready -h postgres -p 5432; do echo waiting for postgres; sleep 2; done; uvicorn main:app --host 0.0.0.0 --port 8000 --reload"]
+CMD ["sh", "-c", "until pg_isready -h postgres -p 5432; do echo waiting for postgres; sleep 2; done; alembic revision --autogenerate -m 'initialized' && alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"]
