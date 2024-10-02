@@ -1,15 +1,6 @@
 {
   "users": [
     {
-      "id": 1,
-      "email": "john.doe@example.com",
-      "username": "john_doe",
-      "profile_picture": "john.jpg",
-      "password": "securePassword123",
-      "bio": "I'm a software developer who loves coding in Python and JavaScript.",
-      "role": "user"
-    },
-    {
       "id": 2,
       "email": "jane.doe@example.com",
       "username": "jane_doe",

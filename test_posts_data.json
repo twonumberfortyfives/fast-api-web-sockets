@@ -1,13 +1,6 @@
 {
   "posts": [
     {
-      "id": 1,
-      "topic": "Introduction to FastAPI",
-      "content": "FastAPI is a modern, fast web framework for building APIs with Python 3.6+ based on standard Python type hints.",
-      "tags": "FastAPI, Python, API",
-      "user_id": 1
-    },
-    {
       "id": 2,
       "topic": "Understanding Docker",
       "content": "Docker is a tool designed to make it easier to create, deploy, and run applications by using containers.",
@@ -27,13 +20,6 @@
       "content": "PostgreSQL is a powerful, open-source object-relational database system that uses and extends the SQL language.",
       "tags": "PostgreSQL, Database, SQL",
       "user_id": 4
-    },
-    {
-      "id": 5,
-      "topic": "Building RESTful APIs",
-      "content": "RESTful APIs allow for interactions between client and server using standard HTTP methods.",
-      "tags": "REST, API, Web Development",
-      "user_id": 1
     },
     {
       "id": 6,
@@ -69,13 +55,6 @@
       "content": "WebSockets provide a way to open a persistent connection between a client and server for real-time communication.",
       "tags": "WebSockets, Real-time, Web Development",
       "user_id": 4
-    },
-    {
-      "id": 11,
-      "topic": "Getting Started with React",
-      "content": "React is a JavaScript library for building user interfaces, allowing developers to create large web applications that can change data, without reloading the page.",
-      "tags": "React, Frontend, JavaScript",
-      "user_id": 1
     },
     {
       "id": 12,
