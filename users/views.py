@@ -32,14 +32,24 @@ async def get_users_view(db: AsyncSession):
     return result
 
 
-async def retrieve_user_view(db: AsyncSession, user_id: int):
-    result = await db.execute(
-        select(models.DBUser)
-        .outerjoin(models.DBPost)
-        .options(selectinload(models.DBUser.posts))
-        .filter(models.DBUser.id == user_id)
-    )
-    user = result.scalar()
+async def retrieve_user_view(db: AsyncSession, user):
+    if user.isdigit():
+        user = int(user)
+        result = await db.execute(
+            select(models.DBUser)
+            .outerjoin(models.DBPost)
+            .options(selectinload(models.DBUser.posts))
+            .filter(models.DBUser.id == user)
+        )
+        user = result.scalar_one_or_none()
+    if isinstance(user, str):
+        result = await db.execute(
+            select(models.DBUser)
+            .outerjoin(models.DBPost)
+            .options(selectinload(models.DBUser.posts))
+            .filter(models.DBUser.username.ilike(f"%{user}%"))
+        )
+        user = result.scalars().all()
     if user:
         return user
     raise HTTPException(status_code=404, detail="User not found")

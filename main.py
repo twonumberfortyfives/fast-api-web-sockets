@@ -16,7 +16,7 @@ from sqlalchemy.future import select
 
 from db import models
 from db.engine import init_db
-from dependencies import get_db, refresh_token_view
+from dependencies import get_db
 from users.routes import router as users_router
 from posts.routes import router as posts_router
 from chat.routes import router as chat_router
@@ -100,59 +100,18 @@ async def get_current_user_websocket(
     access_token = websocket.cookies.get("access_token")
     refresh_token = websocket.cookies.get("refresh_token")
 
-    if access_token is None:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-
-    try:
-        user_data = jwt.decode(
-            access_token, os.getenv("SECRET_KEY"), algorithms=[os.getenv("ALGORITHM")]
-        )
-    except jwt.ExpiredSignatureError:
-        print("Token expired, trying to refresh")
-        if refresh_token is None:
-            raise HTTPException(status_code=401, detail="Refresh token is missing")
-
-        # Call the refresh token view to get new tokens
-        new_access_token, new_refresh_token = await refresh_token_view(refresh_token)
-
-        # Send the new tokens back to the client
-        await websocket.send_json({
-            "type": "token_refresh",
-            "access_token": new_access_token,
-            "refresh_token": new_refresh_token
-        })
-
-        # Decode the new access token
-        user_data = jwt.decode(
-            new_access_token,
-            os.getenv("SECRET_KEY"),
-            algorithms=[os.getenv("ALGORITHM")],
-        )
-
-    except jwt.PyJWTError:
-        raise HTTPException(status_code=403, detail="Could not validate credentials")
-
-    user_email = user_data.get("sub")
-
-    result = await db.execute(
-        select(models.DBUser).filter(models.DBUser.email == user_email)
-    )
-    user = result.scalar_one_or_none()
-
-    if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    return user  # Return the user model
+    return access_token
 
 
 @app.websocket("/send-message/{receiver_id}")
 async def websocket_endpoint(
-        websocket: WebSocket, receiver_id: int, db: AsyncSession = Depends(get_db)
+        websocket: WebSocket, receiver_id: int,
+        db: AsyncSession = Depends(get_db),
 ):
     await manager.connect(websocket)
     try:
-        user_id = (await get_current_user_websocket(websocket, db)).id
-        if not user_id:
+        user = await get_current_user_websocket(websocket, db)
+        if not user:
             await websocket.close(code=1008)
             return
 
@@ -161,7 +120,6 @@ async def websocket_endpoint(
             await manager.send_personal_message(data, websocket, db, receiver_id)
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-        await manager.broadcast(f"Client {user_id} left the chat")
     except Exception as e:
         print(f"Error in WebSocket: {e}")
         await websocket.close(code=1008)
