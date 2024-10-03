@@ -41,7 +41,7 @@ async def retrieve_user_view(db: AsyncSession, user):
             .options(selectinload(models.DBUser.posts))
             .filter(models.DBUser.id == user)
         )
-        user = result.scalar_one_or_none()
+        user = result.scalar()
     if isinstance(user, str):
         result = await db.execute(
             select(models.DBUser)
@@ -125,9 +125,7 @@ async def login_view(
 
 
 async def my_profile_view(request: Request, response: Response, db: AsyncSession):
-    user_id = (await get_current_user(request=request, response=response, db=db)).id
-    user = await retrieve_user_view(db=db, user_id=user_id)
-    return user
+    return await get_current_user(request=request, response=response, db=db)
 
 
 async def my_profile_edit_view(

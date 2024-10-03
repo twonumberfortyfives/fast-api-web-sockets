@@ -26,10 +26,9 @@ async def create_post(
     post: serializers.PostCreate,
     db: AsyncSession = Depends(get_db),
 ):
-    response = await views.create_post_view(
+    return await views.create_post_view(
         db=db, request=request, post=post, response=response
     )
-    return response
 
 
 @router.patch("/posts/{post_id}", response_model=serializers.Post)
@@ -40,15 +39,13 @@ async def edit_post(
     response: Response,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await views.edit_post_view(
+    return await views.edit_post_view(
         post_update=post_update,
         post_id=post_id,
         request=request,
         db=db,
         response=response,
     )
-
-    return result
 
 
 @router.delete("/posts/{post_id}")
@@ -58,7 +55,6 @@ async def delete_post(
     response: Response,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await views.delete_post_view(
+    return await views.delete_post_view(
         post_id=post_id, db=db, request=request, response=response
     )
-    return result

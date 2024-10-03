@@ -16,10 +16,9 @@ router = APIRouter()
 async def is_authenticated(
     request: Request, response: Response, db: AsyncSession = Depends(get_db)
 ):
-    is_user = await views.is_authenticated_view(
+    return await views.is_authenticated_view(
         request=request, response=response, db=db
     )
-    return is_user
 
 
 @router.get("/admin-only")
@@ -45,8 +44,7 @@ async def retrieve_user(user, db: AsyncSession = Depends(get_db)):
 async def my_profile(
     request: Request, response: Response, db: AsyncSession = Depends(get_db)
 ):
-    user = await views.my_profile_view(request=request, response=response, db=db)
-    return user
+    return await views.my_profile_view(request=request, response=response, db=db)
 
 
 @router.patch("/my-profile", response_model=UserEdit)

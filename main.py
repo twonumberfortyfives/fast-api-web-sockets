@@ -8,11 +8,9 @@ from fastapi import (
     Depends,
 )
 from fastapi.staticfiles import StaticFiles
-from fastapi.exceptions import HTTPException
 
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
 
 from db import models
 from db.engine import init_db
