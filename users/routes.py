@@ -16,9 +16,7 @@ router = APIRouter()
 async def is_authenticated(
     request: Request, response: Response, db: AsyncSession = Depends(get_db)
 ):
-    return await views.is_authenticated_view(
-        request=request, response=response, db=db
-    )
+    return await views.is_authenticated_view(request=request, response=response, db=db)
 
 
 @router.get("/admin-only")
@@ -35,7 +33,9 @@ async def get_users(db: AsyncSession = Depends(get_db)):
     return users
 
 
-@router.get("/users/{user}", response_model=serializers.UserList | list[serializers.UserList])
+@router.get(
+    "/users/{user}", response_model=serializers.UserList | list[serializers.UserList]
+)
 async def retrieve_user(user, db: AsyncSession = Depends(get_db)):
     return await views.retrieve_user_view(db=db, user=user)
 

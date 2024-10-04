@@ -10,7 +10,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 dotenv.load_dotenv()
 
 
-DATABASE_URL = os.getenv("DATABASE_URL")  # change if connecting via IDE/docker container
+DATABASE_URL = os.getenv(
+    "DATABASE_URL"
+)  # change if connecting via IDE/docker container
 
 engine = create_async_engine(DATABASE_URL, echo=True, future=True)
 async_session = sessionmaker(

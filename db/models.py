@@ -26,13 +26,21 @@ class DBUser(Base):
 
     # Specify foreign keys explicitly
     sent_messages = relationship(
-        "DBMessage", foreign_keys="[DBMessage.sender_id]", back_populates="sender", cascade="all, delete-orphan"
+        "DBMessage",
+        foreign_keys="[DBMessage.sender_id]",
+        back_populates="sender",
+        cascade="all, delete-orphan",
     )
     received_messages = relationship(
-        "DBMessage", foreign_keys="[DBMessage.receiver_id]", back_populates="receiver", cascade="all, delete-orphan"
+        "DBMessage",
+        foreign_keys="[DBMessage.receiver_id]",
+        back_populates="receiver",
+        cascade="all, delete-orphan",
     )
 
-    participants = relationship("DBChatParticipant", back_populates="user", cascade="all, delete-orphan")
+    participants = relationship(
+        "DBChatParticipant", back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class DBPost(Base):

@@ -61,7 +61,7 @@ class ConnectionManager:
         self.active_connections.remove(websocket)
 
     async def send_personal_message(
-            self, message: str, websocket: WebSocket, db: AsyncSession, receiver_id: int
+        self, message: str, websocket: WebSocket, db: AsyncSession, receiver_id: int
     ):
         access_token = websocket.cookies.get("access_token")
         user_data = jwt.decode(
@@ -103,8 +103,9 @@ async def get_current_user_websocket(
 
 @app.websocket("/send-message/{receiver_id}")
 async def websocket_endpoint(
-        websocket: WebSocket, receiver_id: int,
-        db: AsyncSession = Depends(get_db),
+    websocket: WebSocket,
+    receiver_id: int,
+    db: AsyncSession = Depends(get_db),
 ):
     await manager.connect(websocket)
     try:
