@@ -55,6 +55,17 @@ async def get_all_posts_from_db(db: AsyncSession, offset: int, page_size: int) -
     return posts
 
 
+async def get_all_posts_without_pagination(db: AsyncSession):
+    result = await db.execute(
+        select(models.DBPost)
+        .outerjoin(models.DBUser)
+        .options(selectinload(models.DBPost.user))
+        .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
+    )
+    posts = result.scalars().all()
+    return posts
+
+
 async def get_all_posts_from_cache(redis_client, offset: int, page_size: int) -> Optional[list[dict]]:
     cached_posts = await redis_client.lrange("all_posts", offset, offset + page_size - 1)
 
