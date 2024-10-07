@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from typing import Optional
 
 from fastapi import HTTPException, Request, Response
 from passlib.context import CryptContext
@@ -30,44 +31,57 @@ def serialize(obj):
     raise TypeError(f"Type {type(obj)} not serializable")
 
 
-async def cache_all_posts(redis_client, posts: [models.DBPost]):
-    serialized_posts = json.dumps([serializers.PostList.from_orm(post).dict() for post in posts], default=serialize)
+async def cache_all_posts(redis_client, posts: list[models.DBPost]):
+    # Serialize and store each post individually in Redis
+    for post in posts:
+        serialized_post = json.dumps(serializers.PostList.from_orm(post).dict(), default=serialize)
+        await redis_client.rpush("all_posts", serialized_post)
 
-    await redis_client.set("all_posts", serialized_posts, ex=60)  # Кэш на 60 секунд
+    # Set an expiration time for the key
+    await redis_client.expire("all_posts", 60)  # Cache for 60 seconds
 
 
-async def get_all_posts_from_db(db: AsyncSession):
+async def get_all_posts_from_db(db: AsyncSession, offset: int, page_size: int) -> list[models.DBPost]:
+    # Execute a query to select posts with pagination
     result = await db.execute(
         select(models.DBPost)
         .outerjoin(models.DBUser)
         .options(selectinload(models.DBPost.user))
+        .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
+        .offset(offset)  # Apply the offset
+        .limit(page_size)  # Apply the limit for pagination
     )
-    posts = result.scalars().all()
+    posts = result.scalars().all()  # Get all posts from the result
     return posts
 
 
-async def get_all_posts_from_cache(redis_client):
-    cached_posts = await redis_client.get("all_posts")
+async def get_all_posts_from_cache(redis_client, offset: int, page_size: int) -> Optional[list[dict]]:
+    cached_posts = await redis_client.lrange("all_posts", offset, offset + page_size - 1)
+
     if cached_posts:
-        return json.loads(cached_posts)
-    return None
+        return [json.loads(post) for post in cached_posts]
+
+    return []
 
 
-async def get_all_posts_view(db: AsyncSession):
+async def get_all_posts_view(page: int, page_size: int, db: AsyncSession):
     redis_client = aioredis.from_url("redis://redis:6379/0")
 
-    cached_posts = await get_all_posts_from_cache(redis_client)
+    offset = (page - 1) * page_size
+
+    cached_posts = await get_all_posts_from_cache(redis_client, offset, page_size)
 
     if cached_posts:
-        print("users received from cache")
+        print("Posts received from cache")
         return cached_posts
 
-    posts = await get_all_posts_from_db(db)
+    posts = await get_all_posts_from_db(db, offset, page_size)
 
     if posts:
-        await cache_all_posts(redis_client, posts)
-        print("users received from db and cached")
+        await cache_all_posts(redis_client, posts)  # Cache the posts
+        print("Posts received from db and cached")
         return posts
+
     raise HTTPException(status_code=404, detail="No posts found")
 
 

@@ -8,8 +8,8 @@ router = APIRouter()
 
 
 @router.get("/posts", response_model=list[serializers.PostList])
-async def get_all_posts(db: AsyncSession = Depends(get_db)):
-    return await views.get_all_posts_view(db)
+async def get_all_posts(page: int = None, page_size: int = None, db: AsyncSession = Depends(get_db)):
+    return await views.get_all_posts_view(page, page_size, db)
 
 
 @router.get(

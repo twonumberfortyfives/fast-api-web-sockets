@@ -75,6 +75,14 @@ class UserPosts(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     user: PostsAuthor
 
+    class Config:
+        from_attributes = True
+        json_encoders = {
+            datetime: lambda v: v.astimezone(timezone.utc)
+            .isoformat()
+            .replace("+00:00", "Z")
+        }
+
 
 class UserMyProfile(BaseModel):
     id: int
@@ -86,7 +94,6 @@ class UserMyProfile(BaseModel):
 
     class Config:
         from_attributes = True
-
 
 
 class UserEdit(BaseModel):
