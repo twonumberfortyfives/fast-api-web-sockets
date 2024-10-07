@@ -1,6 +1,8 @@
+import json
 import os
 import uuid
 
+import aioredis
 from fastapi import HTTPException, UploadFile
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,6 +18,7 @@ from dependencies import (
     create_refresh_token,
     ACCESS_TOKEN_EXPIRE_TIME_MINUTES,
 )
+from posts.views import serialize
 from users import serializers
 
 load_dotenv()
@@ -23,13 +26,43 @@ load_dotenv()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-async def get_users_view(db: AsyncSession):
+async def get_users_from_cache(redis_client):
+    cached_users = await redis_client.get("all_users")
+    if cached_users:
+        return json.loads(cached_users)
+    return None
+
+
+async def get_users_from_db(db: AsyncSession):
     result = await db.execute(
         select(models.DBUser)
-        .outerjoin(models.DBPost)
-        .options(selectinload(models.DBUser.posts))
     )
-    return result
+    users = result.scalars().all()
+    return users
+
+
+async def cache_users(redis_client, users: [models.DBUser]):
+    serialized_users = json.dumps([serializers.UserList.from_orm(user).dict() for user in users], default=serialize)
+    await redis_client.set("all_users", serialized_users, ex=60)
+
+
+async def get_users_view(db: AsyncSession):
+    # redis_client = aioredis.from_url("redis://redis:6379/0")
+    #
+    # cached_users = await get_users_from_cache(redis_client)
+    #
+    # if cached_users:
+    #     print("users received from cache")
+    #     return cached_users
+
+    users = await get_users_from_db(db)
+    return users
+
+    # if users:
+    #     await cache_users(redis_client, users)
+    #     print("users received from db and cached")
+    #     return users
+    # raise HTTPException(status_code=404, detail="Users not found")
 
 
 async def retrieve_user_view(db: AsyncSession, user):
@@ -37,16 +70,12 @@ async def retrieve_user_view(db: AsyncSession, user):
         user = int(user)
         result = await db.execute(
             select(models.DBUser)
-            .outerjoin(models.DBPost)
-            .options(selectinload(models.DBUser.posts))
             .filter(models.DBUser.id == user)
         )
         user = result.scalar()
     if isinstance(user, str):
         result = await db.execute(
             select(models.DBUser)
-            .outerjoin(models.DBPost)
-            .options(selectinload(models.DBUser.posts))
             .filter(models.DBUser.username.ilike(f"%{user}%"))
         )
         user = result.scalars().all()
@@ -125,23 +154,50 @@ async def login_view(
 
 
 async def my_profile_view(request: Request, response: Response, db: AsyncSession):
+    redis_client = await aioredis.from_url("redis://localhost:6379/0")
     return await get_current_user(request=request, response=response, db=db)
+
+
+async def retrieve_users_posts_view(user_id: int, db: AsyncSession):
+    user = await retrieve_user_view(db=db, user=str(user_id))
+
+    result = await db.execute(
+        select(models.DBPost)
+        .outerjoin(models.DBUser)
+        .options(selectinload(models.DBPost.user))
+        .filter(models.DBPost.user_id == user.id)
+    )
+    users_posts = result.scalars().all()
+    return users_posts
 
 
 async def my_profile_edit_view(
     request: Request,
     response: Response,
-    user: serializers.UserEdit,
+    username: str,
+    email: str,
+    bio: str,
     db: AsyncSession,
     profile_picture: UploadFile = None,
 ):
     found_user = await get_current_user(request=request, response=response, db=db)
 
-    if user.username is not None:
-        found_user.username = user.username
-    if user.email is not None:
-        found_user.email = user.email
-    found_user.bio = user.bio
+    if username:
+        if not username.strip():
+            raise HTTPException(status_code=400, detail="Username cannot be empty or contain only spaces.")
+        found_user.username = username
+
+    if email:
+        if not email.strip():
+            raise HTTPException(status_code=400, detail="Email cannot be empty or contain only spaces.")
+        if "@" not in email:
+            raise HTTPException(status_code=400, detail="Invalid email format.")
+        found_user.email = email
+
+    if bio:
+        if len(bio) > 500:
+            raise HTTPException(status_code=400, detail="Bio cannot exceed 500 characters.")
+        found_user.bio = bio
 
     if profile_picture and not profile_picture != "":
         if profile_picture.content_type not in ["image/png", "image/jpeg"]:

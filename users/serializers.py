@@ -1,4 +1,6 @@
-from pydantic import BaseModel, EmailStr, constr, field_validator
+from datetime import datetime, timezone
+
+from pydantic import BaseModel, EmailStr, constr, field_validator, Field
 
 from posts.serializers import Post
 
@@ -54,28 +56,55 @@ class UserList(BaseModel):
     profile_picture: str
     username: str
     bio: str | None
-    posts: list[Post] = []
+
+    class Config:
+        from_attributes = True
+
+
+class PostsAuthor(BaseModel):
+    id: int
+    username: str
+    email: EmailStr
+
+
+class UserPosts(BaseModel):
+    id: int
+    topic: str
+    content: str
+    tags: list[str]
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    user: PostsAuthor
+
+
+class UserMyProfile(BaseModel):
+    id: int
+    email: EmailStr
+    profile_picture: str
+    username: str
+    bio: str | None
+    posts: list[Post]
+
+    class Config:
+        from_attributes = True
+
 
 
 class UserEdit(BaseModel):
-    email: EmailStr | None
-    username: constr(min_length=3, max_length=30) | None
-    bio: constr(max_length=500) | None
-    posts: list[Post] = []
+    email: EmailStr
+    username: str
+    bio: str | None
 
-    # Custom validator for username
     @field_validator("username")
     def validate_username(cls, username):
-        if username:
-            if " " in username:
-                raise ValueError("Username cannot contain spaces")
+        if not username.strip():
+            raise ValueError("Username cannot be empty or contain only spaces.")
         return username
 
+    # Custom validator for email
     @field_validator("email")
     def validate_email(cls, email):
-        if email:
-            if " " in email:
-                raise ValueError("Email cannot contain spaces")
+        if not email.strip():
+            raise ValueError("Email cannot be empty or contain only spaces.")
         return email
 
 

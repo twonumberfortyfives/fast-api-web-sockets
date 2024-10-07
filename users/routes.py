@@ -1,11 +1,15 @@
+import hashlib
+import json
+
 from fastapi import APIRouter, Request, Depends, Response, UploadFile, File
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response as FastAPIResponse
 from fastapi.exceptions import HTTPException
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db import models
 from dependencies import get_db, require_role
+from posts.views import serialize
 from users import views, serializers
 from users.serializers import UserEdit
 
@@ -28,9 +32,7 @@ async def get_admin_end_point(
 
 @router.get("/users", response_model=list[serializers.UserList])
 async def get_users(db: AsyncSession = Depends(get_db)):
-    result = await views.get_users_view(db=db)
-    users = result.scalars().all()
-    return users
+    return await views.get_users_view(db=db)
 
 
 @router.get(
@@ -40,7 +42,15 @@ async def retrieve_user(user, db: AsyncSession = Depends(get_db)):
     return await views.retrieve_user_view(db=db, user=user)
 
 
-@router.get("/my-profile", response_model=serializers.UserList)
+@router.get(
+    "/users/{user_id}/posts/",
+    response_model=list[serializers.UserPosts]
+)
+async def retrieve_users_posts(user_id: int, db: AsyncSession = Depends(get_db)):
+    return await views.retrieve_users_posts_view(user_id=user_id, db=db)
+
+
+@router.get("/my-profile", response_model=serializers.UserMyProfile)
 async def my_profile(
     request: Request, response: Response, db: AsyncSession = Depends(get_db)
 ):
@@ -51,25 +61,18 @@ async def my_profile(
 async def my_profile_edit(
     request: Request,
     response: Response,
-    username: str = None,
     email: str = None,
+    username: str = None,
     bio: str = None,
     profile_picture: UploadFile | str = File(None),
     db: AsyncSession = Depends(get_db),
 ):
-    try:
-        user = serializers.UserEdit(
-            username=username,
-            email=email,
-            bio=bio,
-        )
-    except Exception as e:
-        raise HTTPException(status_code=422, detail=str(e))
-
     updated_user = await views.my_profile_edit_view(
         request=request,
         response=response,
-        user=user,
+        username=username,
+        email=email,
+        bio=bio,
         profile_picture=profile_picture,
         db=db,
     )

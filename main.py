@@ -20,6 +20,7 @@ from posts.routes import router as posts_router
 from chat.routes import router as chat_router
 from users.views import get_user_by_email
 
+
 app = FastAPI()
 
 origins = ["*"]

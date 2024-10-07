@@ -28,3 +28,9 @@ services:
       POSTGRES_USER: "agora"
       POSTGRES_PASSWORD: "postgres"
       POSTGRES_DB: "postgres"
+
+  redis:
+    image: redis:latest
+    restart: always
+    ports:
+      - "6379:6379"

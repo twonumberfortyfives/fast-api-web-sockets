@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel, Field, EmailStr, field_validator
 from datetime import datetime, timezone
 
@@ -11,6 +13,7 @@ class Post(BaseModel):
     user_id: int
 
     class Config:
+        from_attributes = True
         json_encoders = {
             datetime: lambda v: v.astimezone(timezone.utc)
             .isoformat()
@@ -23,6 +26,9 @@ class UserForPostList(BaseModel):
     username: str
     email: EmailStr
 
+    class Config:
+        from_attributes = True
+
 
 class PostList(BaseModel):
     id: int
@@ -30,9 +36,10 @@ class PostList(BaseModel):
     content: str
     tags: list[str]
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    user: UserForPostList
+    user: Optional[UserForPostList]
 
     class Config:
+        from_attributes = True
         json_encoders = {
             datetime: lambda v: v.astimezone(timezone.utc)
             .isoformat()

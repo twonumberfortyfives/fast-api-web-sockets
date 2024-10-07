@@ -33,15 +33,19 @@ async def create_post(
 
 @router.patch("/posts/{post_id}", response_model=serializers.Post)
 async def edit_post(
-    post_update: serializers.PostUpdate,
     post_id: int,
     request: Request,
     response: Response,
+    topic: str = None,
+    content: str = None,
+    tags: str = None,
     db: AsyncSession = Depends(get_db),
 ):
     return await views.edit_post_view(
-        post_update=post_update,
         post_id=post_id,
+        topic=topic,
+        content=content,
+        tags=tags,
         request=request,
         db=db,
         response=response,

@@ -1,5 +1,9 @@
+import json
+from datetime import datetime
+
 from fastapi import HTTPException, Request, Response
 from passlib.context import CryptContext
+import aioredis
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from dotenv import load_dotenv
@@ -20,20 +24,54 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
-async def get_all_posts_view(db: AsyncSession):
+def serialize(obj):
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    raise TypeError(f"Type {type(obj)} not serializable")
+
+
+async def cache_all_posts(redis_client, posts: [models.DBPost]):
+    serialized_posts = json.dumps([serializers.PostList.from_orm(post).dict() for post in posts], default=serialize)
+
+    await redis_client.set("all_posts", serialized_posts, ex=60)  # Кэш на 60 секунд
+
+
+async def get_all_posts_from_db(db: AsyncSession):
     result = await db.execute(
         select(models.DBPost)
         .outerjoin(models.DBUser)
         .options(selectinload(models.DBPost.user))
     )
     posts = result.scalars().all()
+    return posts
+
+
+async def get_all_posts_from_cache(redis_client):
+    cached_posts = await redis_client.get("all_posts")
+    if cached_posts:
+        return json.loads(cached_posts)
+    return None
+
+
+async def get_all_posts_view(db: AsyncSession):
+    redis_client = aioredis.from_url("redis://redis:6379/0")
+
+    cached_posts = await get_all_posts_from_cache(redis_client)
+
+    if cached_posts:
+        print("users received from cache")
+        return cached_posts
+
+    posts = await get_all_posts_from_db(db)
+
     if posts:
+        await cache_all_posts(redis_client, posts)
+        print("users received from db and cached")
         return posts
     raise HTTPException(status_code=404, detail="No posts found")
 
 
 async def retrieve_post_view(post, db: AsyncSession):
-    result = None
     if post.isdigit():
         post = int(post)
         result = await db.execute(
@@ -76,11 +114,13 @@ async def create_post_view(
 
 
 async def edit_post_view(
-    post_update: serializers.PostUpdate,
     post_id: int,
     request: Request,
     response: Response,
     db: AsyncSession,
+    topic: str = None,
+    content: str = None,
+    tags: str = None,
 ):
     user_id = (await get_current_user(request=request, db=db, response=response)).id
     result = await db.execute(select(models.DBPost).filter(models.DBPost.id == post_id))
@@ -94,12 +134,12 @@ async def edit_post_view(
             status_code=403, detail="You are not allowed to edit this post"
         )
 
-    if not post_update.tags == "":
-        post.tags = post_update.tags
-    if not post_update.topic == "":
-        post.topic = post_update.topic
-    if not post_update.content == "":
-        post.content = post_update.content
+    if tags:
+        post.tags = [tags]
+    if topic:
+        post.topic = topic
+    if content:
+        post.content = content
 
     db.add(post)
     await db.commit()
