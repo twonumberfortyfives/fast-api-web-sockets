@@ -214,6 +214,12 @@ async def my_profile_edit_view(
         with open(image_path, "wb") as f:
             f.write(await profile_picture.read())
 
+        if found_user.profile_picture and found_user.profile_picture != "http://127.0.0.1:8000/uploads/default.jpg":
+            old_image_path = found_user.profile_picture.split("/")[-1]  # Get the filename from the URL
+            old_image_full_path = os.path.join("uploads", old_image_path)  # Construct the full path
+            if os.path.exists(old_image_full_path):
+                os.remove(old_image_full_path)
+
         # Store the URL for accessing the image
         found_user.profile_picture = f"http://127.0.0.1:8000/{image_path}"
 
