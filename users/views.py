@@ -47,22 +47,21 @@ async def cache_users(redis_client, users: [models.DBUser]):
 
 
 async def get_users_view(db: AsyncSession):
-    # redis_client = aioredis.from_url("redis://redis:6379/0")
-    #
-    # cached_users = await get_users_from_cache(redis_client)
-    #
-    # if cached_users:
-    #     print("users received from cache")
-    #     return cached_users
+    redis_client = aioredis.from_url("redis://redis:6379/0")
+
+    cached_users = await get_users_from_cache(redis_client)
+
+    if cached_users:
+        print("users received from cache")
+        return cached_users
 
     users = await get_users_from_db(db)
-    return users
 
-    # if users:
-    #     await cache_users(redis_client, users)
-    #     print("users received from db and cached")
-    #     return users
-    # raise HTTPException(status_code=404, detail="Users not found")
+    if users:
+        await cache_users(redis_client, users)
+        print("users received from db and cached")
+        return users
+    raise HTTPException(status_code=404, detail="Users not found")
 
 
 async def retrieve_user_view(db: AsyncSession, user):
