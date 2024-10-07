@@ -171,48 +171,53 @@ async def retrieve_users_posts_view(user_id: int, db: AsyncSession):
 
 
 async def my_profile_edit_view(
-    request: Request,
-    response: Response,
-    username: str,
-    email: str,
-    bio: str,
-    db: AsyncSession,
-    profile_picture: UploadFile = None,
+        request: Request,
+        response: Response,
+        username: str,
+        email: str,
+        bio: str,
+        db: AsyncSession,
+        profile_picture: UploadFile = None,
 ):
     found_user = await get_current_user(request=request, response=response, db=db)
 
-    if username:
+    # Validate and update username
+    if username is not None:
         if not username.strip():
             raise HTTPException(status_code=400, detail="Username cannot be empty or contain only spaces.")
         found_user.username = username
 
-    if email:
+    # Validate and update email
+    if email is not None:
         if not email.strip():
             raise HTTPException(status_code=400, detail="Email cannot be empty or contain only spaces.")
         if "@" not in email:
             raise HTTPException(status_code=400, detail="Invalid email format.")
         found_user.email = email
 
-    if bio:
+    # Validate and update bio
+    if bio is not None:
         if len(bio) > 500:
             raise HTTPException(status_code=400, detail="Bio cannot exceed 500 characters.")
         found_user.bio = bio
 
-    if profile_picture and not profile_picture != "":
+    # Handle profile picture upload
+    if profile_picture:
         if profile_picture.content_type not in ["image/png", "image/jpeg"]:
             raise HTTPException(status_code=400, detail="Picture type not supported")
 
         os.makedirs("uploads", exist_ok=True)
 
-        image_path = (
-            f"uploads/{found_user.id}_{uuid.uuid4()}_{profile_picture.filename}"
-        )
+        # Save the profile picture
+        image_path = f"uploads/{found_user.id}_{uuid.uuid4()}_{profile_picture.filename}"
 
         with open(image_path, "wb") as f:
             f.write(await profile_picture.read())
 
-        found_user.profile_picture = image_path
+        # Store the URL for accessing the image
+        found_user.profile_picture = f"http://127.0.0.1:8000/{image_path}"
 
+    # Commit changes to the database
     try:
         await db.commit()
         await db.refresh(found_user)

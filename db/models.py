@@ -16,7 +16,7 @@ class DBUser(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     email = Column(String, unique=True, nullable=False)
     username = Column(String(30), unique=True, nullable=False)
-    profile_picture = Column(String, default="default.jpg")
+    profile_picture = Column(String, default="http://127.0.0.1:8000/uploads/default.jpg")
     password = Column(String, nullable=False)
     bio = Column(String(500), nullable=True)
     role = Column(ENUM(Role), nullable=False, default=Role.user)
