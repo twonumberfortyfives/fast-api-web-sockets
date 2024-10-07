@@ -57,7 +57,7 @@ async def my_profile(
     return await views.my_profile_view(request=request, response=response, db=db)
 
 
-@router.patch("/my-profile", response_model=UserEdit)
+@router.patch("/my-profile", response_model=serializers.UserList)
 async def my_profile_edit(
     request: Request,
     response: Response,
