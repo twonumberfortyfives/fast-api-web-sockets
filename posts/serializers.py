@@ -25,6 +25,7 @@ class UserForPostList(BaseModel):
     id: int
     username: str
     email: EmailStr
+    profile_picture: str
 
     class Config:
         from_attributes = True

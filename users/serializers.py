@@ -65,6 +65,7 @@ class PostsAuthor(BaseModel):
     id: int
     username: str
     email: EmailStr
+    profile_picture: str
 
 
 class UserPosts(BaseModel):
