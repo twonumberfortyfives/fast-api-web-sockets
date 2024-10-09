@@ -1,10 +1,5 @@
-import json
-from datetime import datetime
-from typing import Optional
-
 from fastapi import HTTPException, Request, Response
 from passlib.context import CryptContext
-import aioredis
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from dotenv import load_dotenv
@@ -28,24 +23,6 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 async def get_total_posts_in_db(db: AsyncSession):
     all_posts = await db.execute(select(models.DBPost))
     return all_posts.scalars().all()
-
-
-def serialize(obj):
-    if isinstance(obj, datetime):
-        return obj.isoformat()
-    raise TypeError(f"Type {type(obj)} not serializable")
-
-
-async def cache_all_posts(redis_client, posts: list[models.DBPost]):
-    # Serialize and store each post individually in Redis
-    for post in posts:
-        serialized_post = json.dumps(
-            serializers.PostList.from_orm(post).dict(), default=serialize
-        )
-        await redis_client.rpush("all_posts", serialized_post)
-
-    # Set an expiration time for the key
-    await redis_client.expire("all_posts", 60)  # Cache for 60 seconds
 
 
 async def get_all_posts_from_db(db: AsyncSession, offset: int, page_size: int):
@@ -73,35 +50,13 @@ async def get_all_posts_without_pagination(db: AsyncSession):
     return posts
 
 
-async def get_all_posts_from_cache(
-    redis_client, offset: int, page_size: int
-) -> Optional[list[dict]]:
-    cached_posts = await redis_client.lrange(
-        "all_posts", offset, offset + page_size - 1
-    )
-
-    if cached_posts:
-        return [json.loads(post) for post in cached_posts]
-
-    return []
-
-
 async def get_all_posts_view(page: int, page_size: int, db: AsyncSession):
-    redis_client = aioredis.from_url("redis://redis:6379/0")
 
     offset = (page - 1) * page_size
-
-    cached_posts = await get_all_posts_from_cache(redis_client, offset, page_size)
-
-    if cached_posts:
-        print("Posts received from cache")
-        return cached_posts
 
     posts = await get_all_posts_from_db(db, offset, page_size)
 
     if posts:
-        await cache_all_posts(redis_client, posts)  # Cache the posts
-        print("Posts received from db and cached")
         return posts
 
     raise HTTPException(status_code=404, detail="No posts found")

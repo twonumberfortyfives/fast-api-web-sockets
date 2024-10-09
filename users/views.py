@@ -18,7 +18,6 @@ from dependencies import (
     create_refresh_token,
     ACCESS_TOKEN_EXPIRE_TIME_MINUTES,
 )
-from posts.views import serialize
 from users import serializers
 
 load_dotenv()
@@ -33,41 +32,17 @@ async def get_all_users_posts_in_total(db: AsyncSession, user_id: int):
     return results.scalars().all()
 
 
-async def get_users_from_cache(redis_client):
-    cached_users = await redis_client.get("all_users")
-    if cached_users:
-        return json.loads(cached_users)
-    return None
-
-
 async def get_users_from_db(db: AsyncSession):
     result = await db.execute(select(models.DBUser))
     users = result.scalars().all()
     return users
 
 
-async def cache_users(redis_client, users: [models.DBUser]):
-    serialized_users = json.dumps(
-        [serializers.UserList.from_orm(user).dict() for user in users],
-        default=serialize,
-    )
-    await redis_client.set("all_users", serialized_users, ex=60)
-
-
 async def get_users_view(db: AsyncSession):
-    redis_client = aioredis.from_url("redis://redis:6379/0")
-
-    cached_users = await get_users_from_cache(redis_client)
-
-    if cached_users:
-        print("users received from cache")
-        return cached_users
-
     users = await get_users_from_db(db)
 
     if users:
-        await cache_users(redis_client, users)
-        print("users received from db and cached")
+
         return users
     raise HTTPException(status_code=404, detail="Users not found")
 
