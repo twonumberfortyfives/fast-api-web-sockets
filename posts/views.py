@@ -25,6 +25,13 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
+async def get_total_posts_in_db(db: AsyncSession):
+    all_posts = await db.execute(
+        select(models.DBPost)
+    )
+    return all_posts.scalars().all()
+
+
 def serialize(obj):
     if isinstance(obj, datetime):
         return obj.isoformat()

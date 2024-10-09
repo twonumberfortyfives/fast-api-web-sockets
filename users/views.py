@@ -132,7 +132,7 @@ async def register_view(db: AsyncSession, user: serializers.UserCreate):
 
 
 async def login_view(
-    db: AsyncSession, user: serializers.UserLogin
+        db: AsyncSession, user: serializers.UserLogin
 ) -> serializers.UserTokenResponse:
     found_user = await get_user_by_email(email=user.email, db=db)
     if found_user:
@@ -157,12 +157,26 @@ async def my_profile_view(request: Request, response: Response, db: AsyncSession
     return await get_current_user(request=request, response=response, db=db)
 
 
-async def retrieve_users_posts_view(user_id: int, db: AsyncSession):
-
+async def retrieve_users_posts_view(user_id: int, page, page_size, db: AsyncSession):
+    if page and page_size:
+        offset = (page - 1) * page_size
+        result = await db.execute(
+            select(models.DBPost)
+            .outerjoin(models.DBUser)
+            .options(selectinload(models.DBPost.user))
+            .filter(models.DBPost.user_id == user_id)
+            .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
+            .offset(offset)  # Apply the offset
+            .limit(page_size)
+        )
+        users_posts = result.scalars().all()
+        return users_posts
     result = await db.execute(
         select(models.DBPost)
+        .outerjoin(models.DBUser)
         .options(selectinload(models.DBPost.user))
         .filter(models.DBPost.user_id == user_id)
+        .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
     )
     users_posts = result.scalars().all()
     return users_posts
@@ -233,10 +247,10 @@ async def my_profile_edit_view(
 
 
 async def change_password_view(
-    request: Request,
-    response: Response,
-    password: serializers.UserPasswordEdit,
-    db: AsyncSession,
+        request: Request,
+        response: Response,
+        password: serializers.UserPasswordEdit,
+        db: AsyncSession,
 ):
     user = await get_current_user(request=request, response=response, db=db)
     if await verify_password(password.old_password, user.password) and user:
@@ -276,7 +290,7 @@ async def logout_view(response: Response, request: Request):
 
 
 async def delete_my_account_view(
-    request: Request, response: Response, db: AsyncSession
+        request: Request, response: Response, db: AsyncSession
 ):
     user = await get_current_user(request=request, response=response, db=db)
     await db.delete(user)

@@ -11,13 +11,18 @@ router = APIRouter()
 async def get_all_posts(response: Response, page: int = None, page_size: int = None, db: AsyncSession = Depends(get_db)):
 
     if page and page_size:
-        all_posts = await views.get_all_posts_view(page, page_size, db)
-        response.headers["X-all-posts-count"] = f"{len(all_posts)}"
+        all_posts_from_db = await views.get_total_posts_in_db(db)
+
+        response.headers["X-all-posts-count"] = f"{len(all_posts_from_db)}"
+
         return await views.get_all_posts_view(page, page_size, db)
+
     else:
-        all_posts = await views.get_all_posts_without_pagination(db)
-        response.headers["X-all-posts-count"] = f"{len(all_posts)}"
-        return all_posts
+        all_posts_from_db = await views.get_total_posts_in_db(db)
+
+        response.headers["X-all-posts-count"] = f"{len(all_posts_from_db)}"
+
+        return await views.get_all_posts_without_pagination(db)
 
 
 @router.get(
