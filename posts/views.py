@@ -96,7 +96,7 @@ async def get_all_posts_view(page: int, page_size: int, db: AsyncSession):
     raise HTTPException(status_code=404, detail="No posts found")
 
 
-async def retrieve_post_view(post, db: AsyncSession):
+async def retrieve_post_view(post, page, page_size, db: AsyncSession):
     if post.isdigit():
         post = int(post)
         result = await db.execute(
@@ -104,17 +104,23 @@ async def retrieve_post_view(post, db: AsyncSession):
             .outerjoin(models.DBUser)
             .options(selectinload(models.DBPost.user))
             .filter(models.DBPost.id == post)
+            .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
         )
         post = result.scalar_one_or_none()
 
     if isinstance(post, str):
-        result = await db.execute(
-            select(models.DBPost)
-            .outerjoin(models.DBUser)
-            .options(selectinload(models.DBPost.user))
-            .filter(models.DBPost.topic.ilike(f"%{post}%"))
-        )
-        post = result.scalars().all()
+        if page and page_size:
+            offset = (page - 1) * page_size
+            result = await db.execute(
+                select(models.DBPost)
+                .outerjoin(models.DBUser)
+                .options(selectinload(models.DBPost.user))
+                .filter(models.DBPost.topic.ilike(f"%{post}%"))
+                .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
+                .offset(offset)  # Apply the offset
+                .limit(page_size)
+            )
+            post = result.scalars().all()
     if post:
         return post
     else:

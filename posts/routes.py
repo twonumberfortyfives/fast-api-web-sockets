@@ -23,8 +23,15 @@ async def get_all_posts(response: Response, page: int = None, page_size: int = N
 @router.get(
     "/posts/{post}", response_model=list[serializers.PostList] | serializers.PostList
 )
-async def retrieve_post(post, db: AsyncSession = Depends(get_db)):
-    return await views.retrieve_post_view(post, db)
+async def retrieve_post(post, response: Response, page: int = None, page_size: int = None, db: AsyncSession = Depends(get_db)):
+    if page and page_size:
+        all_posts = await views.retrieve_post_view(post=post, page=page, page_size=page_size, db=db)
+        response.headers["X-all-posts-count"] = f"{len(all_posts)}"
+        return all_posts
+    else:
+        all_posts = await views.retrieve_post_view(post=post, page=page, page_size=page_size, db=db)
+        response.headers["X-all-posts-count"] = f"{len(all_posts)}"
+        return all_posts
 
 
 @router.post("/posts", response_model=serializers.Post)
