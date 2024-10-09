@@ -1,4 +1,4 @@
-from sqlalchemy import Integer, Column, String, ForeignKey, DateTime, Text, func
+from sqlalchemy import Integer, Column, String, ForeignKey, DateTime, Text, func, UniqueConstraint
 from sqlalchemy.orm import relationship, validates
 from db.engine import Base
 from sqlalchemy.dialects.postgresql import ENUM
@@ -42,6 +42,12 @@ class DBUser(Base):
         "DBChatParticipant", back_populates="user", cascade="all, delete-orphan"
     )
 
+    post_likes = relationship(
+        "DBPostLike",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+
 
 class DBPost(Base):
     __tablename__ = "posts"
@@ -55,6 +61,12 @@ class DBPost(Base):
     )
     created_at = Column(DateTime, server_default=func.now())
     user = relationship("DBUser", back_populates="posts")
+
+    likes = relationship(
+        "DBPostLike",
+        back_populates="post",
+        cascade="all, delete-orphan",
+    )
 
     @property
     def tags(self):
@@ -113,3 +125,16 @@ class DBMessage(Base):
     receiver = relationship(
         "DBUser", foreign_keys=[receiver_id], back_populates="received_messages"
     )
+
+
+class DBPostLike(Base):
+    __tablename__ = "post_likes"
+
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    post_id = Column(Integer, ForeignKey("posts.id"), nullable=False)
+
+    user = relationship("DBUser", back_populates="post_likes")
+    post = relationship("DBPost", back_populates="likes")
+
+    __table_args__ = (UniqueConstraint("user_id", "post_id", name="unique_user_post_like"),)
