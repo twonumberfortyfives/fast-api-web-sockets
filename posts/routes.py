@@ -1,43 +1,39 @@
+from typing import Union
+
 from fastapi import Depends, Request, APIRouter, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from dependencies import get_db
 from posts import serializers, views
+from fastapi_pagination import Page, paginate
 
 
 router = APIRouter()
 
 
-@router.get("/posts", response_model=list[serializers.PostList])
+@router.get("/posts")
 async def get_all_posts(
-    response: Response,
-    page: int = None,
-    page_size: int = None,
     db: AsyncSession = Depends(get_db),
-):
-
-    all_posts_in_total = await views.get_total_posts_in_db(db)
-    response.headers["X-all-posts-count"] = f"{len(all_posts_in_total)}"
-
-    if page and page_size:
-        return await views.get_all_posts_view(page, page_size, db)
-    return await views.get_all_posts_without_pagination(db)
+) -> Page[serializers.PostList]:
+    return paginate(await views.get_all_posts_view(db))
 
 
-@router.get(
-    "/posts/{post}", response_model=list[serializers.PostList] | serializers.PostList
-)
+@router.get("/posts/{post}")
 async def retrieve_post(
-    post,
-    response: Response,
-    page: int = None,
-    page_size: int = None,
+    post: Union[int, str],
     db: AsyncSession = Depends(get_db),
-):
-    all_posts_in_total = await views.get_total_posts_in_db(db)
-    response.headers["X-all-posts-count"] = f"{len(all_posts_in_total)}"
-    return await views.retrieve_post_view(
-        post=post, page=page, page_size=page_size, db=db
-    )
+) -> Page[serializers.PostList]:
+    result = await views.retrieve_post_view(post=post, db=db)
+    return paginate(result)
+
+
+@router.post("/posts/{post_id}/like/", response_model=serializers.Like)
+async def like_the_post(post_id: int, request: Request, response: Response, db: AsyncSession = Depends(get_db)):
+    return await views.like_the_post_view(post_id=post_id, request=request, response=response, db=db)
+
+
+@router.delete("/posts/{post_id}/like/")
+async def unlike_the_post(post_id: int, request: Request, response: Response, db: AsyncSession = Depends(get_db)):
+    return await views.unlike_the_post_view(post_id=post_id, request=request, response=response, db=db)
 
 
 @router.post("/posts", response_model=serializers.Post)

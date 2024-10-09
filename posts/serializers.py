@@ -31,6 +31,12 @@ class UserForPostList(BaseModel):
         from_attributes = True
 
 
+class Like(BaseModel):
+    id: int
+    user_id: int
+    post_id: int
+
+
 class PostList(BaseModel):
     id: int
     topic: str

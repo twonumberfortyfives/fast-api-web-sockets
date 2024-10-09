@@ -25,13 +25,6 @@ load_dotenv()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-async def get_all_users_posts_in_total(db: AsyncSession, user_id: int):
-    results = await db.execute(
-        select(models.DBPost).filter(models.DBPost.user_id == user_id)
-    )
-    return results.scalars().all()
-
-
 async def get_users_from_db(db: AsyncSession):
     result = await db.execute(select(models.DBUser))
     users = result.scalars().all()
@@ -138,20 +131,7 @@ async def my_profile_view(request: Request, response: Response, db: AsyncSession
     return await get_current_user(request=request, response=response, db=db)
 
 
-async def retrieve_users_posts_view(user_id: int, page, page_size, db: AsyncSession):
-    if page and page_size:
-        offset = (page - 1) * page_size
-        result = await db.execute(
-            select(models.DBPost)
-            .outerjoin(models.DBUser)
-            .options(selectinload(models.DBPost.user))
-            .filter(models.DBPost.user_id == user_id)
-            .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
-            .offset(offset)  # Apply the offset
-            .limit(page_size)
-        )
-        users_posts = result.scalars().all()
-        return users_posts
+async def retrieve_users_posts_view(user_id: int, db: AsyncSession):
     result = await db.execute(
         select(models.DBPost)
         .outerjoin(models.DBUser)

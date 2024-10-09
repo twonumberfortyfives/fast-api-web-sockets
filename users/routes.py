@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request, Depends, Response, UploadFile, File
 from fastapi.responses import JSONResponse
+from fastapi_pagination import Page, paginate
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -36,19 +37,14 @@ async def retrieve_user(user, db: AsyncSession = Depends(get_db)):
     return await views.retrieve_user_view(db=db, user=user)
 
 
-@router.get("/users/{user_id}/posts/", response_model=list[serializers.UserPosts])
+@router.get("/users/{user_id}/posts/")
 async def retrieve_users_posts(
     user_id: int,
-    response: Response,
-    page: int = None,
-    page_size: int = None,
     db: AsyncSession = Depends(get_db),
-):
-    all_users_posts = await views.get_all_users_posts_in_total(db=db, user_id=user_id)
-    response.headers["X-all-posts-count"] = f"{len(all_users_posts)}"
-    return await views.retrieve_users_posts_view(
-        user_id=user_id, page=page, page_size=page_size, db=db
-    )
+) -> Page[serializers.UserPosts]:
+    return paginate(await views.retrieve_users_posts_view(
+        user_id=user_id, db=db
+    ))
 
 
 @router.get("/my-profile", response_model=serializers.UserMyProfile)

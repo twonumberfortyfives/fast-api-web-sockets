@@ -11,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi_pagination import add_pagination
 
 from db import models
 from db.engine import init_db
@@ -22,6 +23,8 @@ from users.views import get_user_by_email
 
 
 app = FastAPI()
+
+add_pagination(app)
 
 origins = ["*"]
 

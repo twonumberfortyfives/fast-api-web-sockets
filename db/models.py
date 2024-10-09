@@ -1,3 +1,4 @@
+from pydantic import computed_field
 from sqlalchemy import (
     Integer,
     Column,
@@ -7,6 +8,7 @@ from sqlalchemy import (
     Text,
     func,
     UniqueConstraint,
+    Index,
 )
 from sqlalchemy.orm import relationship, validates
 from db.engine import Base
@@ -148,4 +150,5 @@ class DBPostLike(Base):
 
     __table_args__ = (
         UniqueConstraint("user_id", "post_id", name="unique_user_post_like"),
+        Index("idx_user_post", "user_id", "post_id"),
     )
