@@ -1,4 +1,4 @@
-from fastapi import Depends, Request, APIRouter, HTTPException, Response
+from fastapi import Depends, Request, APIRouter, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from dependencies import get_db
 from posts import serializers, views
@@ -8,34 +8,36 @@ router = APIRouter()
 
 
 @router.get("/posts", response_model=list[serializers.PostList])
-async def get_all_posts(response: Response, page: int = None, page_size: int = None, db: AsyncSession = Depends(get_db)):
+async def get_all_posts(
+    response: Response,
+    page: int = None,
+    page_size: int = None,
+    db: AsyncSession = Depends(get_db),
+):
+
+    all_posts_in_total = await views.get_total_posts_in_db(db)
+    response.headers["X-all-posts-count"] = f"{len(all_posts_in_total)}"
 
     if page and page_size:
-        all_posts_in_total = await views.get_total_posts_in_db(db)
-
-        response.headers["X-all-posts-count"] = f"{len(all_posts_in_total)}"
-
         return await views.get_all_posts_view(page, page_size, db)
-
-    else:
-        all_posts_in_total = await views.get_total_posts_in_db(db)
-
-        response.headers["X-all-posts-count"] = f"{len(all_posts_in_total)}"
-
-        return await views.get_all_posts_without_pagination(db)
+    return await views.get_all_posts_without_pagination(db)
 
 
 @router.get(
     "/posts/{post}", response_model=list[serializers.PostList] | serializers.PostList
 )
-async def retrieve_post(post, response: Response, page: int = None, page_size: int = None, db: AsyncSession = Depends(get_db)):
-    if page and page_size:
-        all_posts_in_total = await views.get_total_posts_in_db(db)
-        response.headers["X-all-posts-count"] = f"{len(all_posts_in_total)}"
-        return await views.retrieve_post_view(post=post, page=page, page_size=page_size, db=db)
-    else:
-        all_posts = await views.retrieve_post_view(post=post, page=page, page_size=page_size, db=db)
-        return all_posts
+async def retrieve_post(
+    post,
+    response: Response,
+    page: int = None,
+    page_size: int = None,
+    db: AsyncSession = Depends(get_db),
+):
+    all_posts_in_total = await views.get_total_posts_in_db(db)
+    response.headers["X-all-posts-count"] = f"{len(all_posts_in_total)}"
+    return await views.retrieve_post_view(
+        post=post, page=page, page_size=page_size, db=db
+    )
 
 
 @router.post("/posts", response_model=serializers.Post)

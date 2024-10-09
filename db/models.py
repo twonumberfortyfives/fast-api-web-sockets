@@ -1,4 +1,13 @@
-from sqlalchemy import Integer, Column, String, ForeignKey, DateTime, Text, func, UniqueConstraint
+from sqlalchemy import (
+    Integer,
+    Column,
+    String,
+    ForeignKey,
+    DateTime,
+    Text,
+    func,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import relationship, validates
 from db.engine import Base
 from sqlalchemy.dialects.postgresql import ENUM
@@ -16,7 +25,9 @@ class DBUser(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     email = Column(String, unique=True, nullable=False)
     username = Column(String(30), unique=True, nullable=False)
-    profile_picture = Column(String, default="http://127.0.0.1:8000/uploads/default.jpg")
+    profile_picture = Column(
+        String, default="http://127.0.0.1:8000/uploads/default.jpg"
+    )
     password = Column(String, nullable=False)
     bio = Column(String(500), nullable=True)
     role = Column(ENUM(Role), nullable=False, default=Role.user)
@@ -43,9 +54,7 @@ class DBUser(Base):
     )
 
     post_likes = relationship(
-        "DBPostLike",
-        back_populates="user",
-        cascade="all, delete-orphan"
+        "DBPostLike", back_populates="user", cascade="all, delete-orphan"
     )
 
 
@@ -137,4 +146,6 @@ class DBPostLike(Base):
     user = relationship("DBUser", back_populates="post_likes")
     post = relationship("DBPost", back_populates="likes")
 
-    __table_args__ = (UniqueConstraint("user_id", "post_id", name="unique_user_post_like"),)
+    __table_args__ = (
+        UniqueConstraint("user_id", "post_id", name="unique_user_post_like"),
+    )

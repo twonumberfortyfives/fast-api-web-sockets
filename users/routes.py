@@ -1,17 +1,11 @@
-import hashlib
-import json
-
 from fastapi import APIRouter, Request, Depends, Response, UploadFile, File
-from fastapi.responses import JSONResponse, Response as FastAPIResponse
-from fastapi.exceptions import HTTPException
+from fastapi.responses import JSONResponse
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db import models
 from dependencies import get_db, require_role
-from posts.views import serialize
 from users import views, serializers
-from users.serializers import UserEdit
 
 router = APIRouter()
 
@@ -42,16 +36,19 @@ async def retrieve_user(user, db: AsyncSession = Depends(get_db)):
     return await views.retrieve_user_view(db=db, user=user)
 
 
-@router.get(
-    "/users/{user_id}/posts/",
-    response_model=list[serializers.UserPosts]
-)
-async def retrieve_users_posts(user_id: int, response: Response, page: int = None, page_size: int = None, db: AsyncSession = Depends(get_db)):
-    if page and page_size:
-        all_users_posts = await views.get_all_users_posts_in_total(db=db, user_id=user_id)
-        response.headers["X-all-posts-count"] = f"{len(all_users_posts)}"
-        return await views.retrieve_users_posts_view(user_id=user_id, page=page, page_size=page_size, db=db)
-    return await views.retrieve_users_posts_view(user_id=user_id, page=page, page_size=page_size, db=db)
+@router.get("/users/{user_id}/posts/", response_model=list[serializers.UserPosts])
+async def retrieve_users_posts(
+    user_id: int,
+    response: Response,
+    page: int = None,
+    page_size: int = None,
+    db: AsyncSession = Depends(get_db),
+):
+    all_users_posts = await views.get_all_users_posts_in_total(db=db, user_id=user_id)
+    response.headers["X-all-posts-count"] = f"{len(all_users_posts)}"
+    return await views.retrieve_users_posts_view(
+        user_id=user_id, page=page, page_size=page_size, db=db
+    )
 
 
 @router.get("/my-profile", response_model=serializers.UserMyProfile)
@@ -71,7 +68,7 @@ async def my_profile_edit(
     profile_picture: UploadFile | str = File(None),
     db: AsyncSession = Depends(get_db),
 ):
-    updated_user = await views.my_profile_edit_view(
+    return await views.my_profile_edit_view(
         request=request,
         response=response,
         username=username,
@@ -80,7 +77,6 @@ async def my_profile_edit(
         profile_picture=profile_picture,
         db=db,
     )
-    return updated_user
 
 
 @router.patch("/my-profile/change-password")
@@ -90,17 +86,15 @@ async def change_password(
     password: serializers.UserPasswordEdit,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await views.change_password_view(
+    return await views.change_password_view(
         request=request, response=response, password=password, db=db
     )
-    return result
 
 
 @router.post("/register")
 async def register(user: serializers.UserCreate, db: AsyncSession = Depends(get_db)):
     user = await views.register_view(db=db, user=user)
-    response = JSONResponse({"message": f"{user.username} has been registered."})
-    return response
+    return JSONResponse({"message": f"{user.username} has been registered."})
 
 
 @router.post("/login")

@@ -26,9 +26,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
 async def get_total_posts_in_db(db: AsyncSession):
-    all_posts = await db.execute(
-        select(models.DBPost)
-    )
+    all_posts = await db.execute(select(models.DBPost))
     return all_posts.scalars().all()
 
 
@@ -41,14 +39,16 @@ def serialize(obj):
 async def cache_all_posts(redis_client, posts: list[models.DBPost]):
     # Serialize and store each post individually in Redis
     for post in posts:
-        serialized_post = json.dumps(serializers.PostList.from_orm(post).dict(), default=serialize)
+        serialized_post = json.dumps(
+            serializers.PostList.from_orm(post).dict(), default=serialize
+        )
         await redis_client.rpush("all_posts", serialized_post)
 
     # Set an expiration time for the key
     await redis_client.expire("all_posts", 60)  # Cache for 60 seconds
 
 
-async def get_all_posts_from_db(db: AsyncSession, offset: int, page_size: int) -> list[models.DBPost]:
+async def get_all_posts_from_db(db: AsyncSession, offset: int, page_size: int):
     # Execute a query to select posts with pagination
     result = await db.execute(
         select(models.DBPost)
@@ -73,8 +73,12 @@ async def get_all_posts_without_pagination(db: AsyncSession):
     return posts
 
 
-async def get_all_posts_from_cache(redis_client, offset: int, page_size: int) -> Optional[list[dict]]:
-    cached_posts = await redis_client.lrange("all_posts", offset, offset + page_size - 1)
+async def get_all_posts_from_cache(
+    redis_client, offset: int, page_size: int
+) -> Optional[list[dict]]:
+    cached_posts = await redis_client.lrange(
+        "all_posts", offset, offset + page_size - 1
+    )
 
     if cached_posts:
         return [json.loads(post) for post in cached_posts]
@@ -128,6 +132,11 @@ async def retrieve_post_view(post, page, page_size, db: AsyncSession):
                 .limit(page_size)
             )
             post = result.scalars().all()
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="Searching by post's topic must be with page and page size!",
+            )
     if post:
         return post
     else:

@@ -28,8 +28,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 async def get_all_users_posts_in_total(db: AsyncSession, user_id: int):
     results = await db.execute(
-        select(models.DBPost)
-        .filter(models.DBPost.user_id == user_id)
+        select(models.DBPost).filter(models.DBPost.user_id == user_id)
     )
     return results.scalars().all()
 
@@ -42,15 +41,16 @@ async def get_users_from_cache(redis_client):
 
 
 async def get_users_from_db(db: AsyncSession):
-    result = await db.execute(
-        select(models.DBUser)
-    )
+    result = await db.execute(select(models.DBUser))
     users = result.scalars().all()
     return users
 
 
 async def cache_users(redis_client, users: [models.DBUser]):
-    serialized_users = json.dumps([serializers.UserList.from_orm(user).dict() for user in users], default=serialize)
+    serialized_users = json.dumps(
+        [serializers.UserList.from_orm(user).dict() for user in users],
+        default=serialize,
+    )
     await redis_client.set("all_users", serialized_users, ex=60)
 
 
@@ -76,14 +76,12 @@ async def retrieve_user_view(db: AsyncSession, user):
     if user.isdigit():
         user = int(user)
         result = await db.execute(
-            select(models.DBUser)
-            .filter(models.DBUser.id == user)
+            select(models.DBUser).filter(models.DBUser.id == user)
         )
         user = result.scalar()
     if isinstance(user, str):
         result = await db.execute(
-            select(models.DBUser)
-            .filter(models.DBUser.username.ilike(f"%{user}%"))
+            select(models.DBUser).filter(models.DBUser.username.ilike(f"%{user}%"))
         )
         user = result.scalars().all()
     if user:
@@ -140,7 +138,7 @@ async def register_view(db: AsyncSession, user: serializers.UserCreate):
 
 
 async def login_view(
-        db: AsyncSession, user: serializers.UserLogin
+    db: AsyncSession, user: serializers.UserLogin
 ) -> serializers.UserTokenResponse:
     found_user = await get_user_by_email(email=user.email, db=db)
     if found_user:
@@ -191,26 +189,31 @@ async def retrieve_users_posts_view(user_id: int, page, page_size, db: AsyncSess
 
 
 async def my_profile_edit_view(
-        request: Request,
-        response: Response,
-        username: str,
-        email: str,
-        bio: str,
-        db: AsyncSession,
-        profile_picture: UploadFile = None,
+    request: Request,
+    response: Response,
+    username: str,
+    email: str,
+    bio: str,
+    db: AsyncSession,
+    profile_picture: UploadFile = None,
 ):
     found_user = await get_current_user(request=request, response=response, db=db)
 
     # Validate and update username
     if username is not None:
         if not username.strip():
-            raise HTTPException(status_code=400, detail="Username cannot be empty or contain only spaces.")
+            raise HTTPException(
+                status_code=400,
+                detail="Username cannot be empty or contain only spaces.",
+            )
         found_user.username = username
 
     # Validate and update email
     if email is not None:
         if not email.strip():
-            raise HTTPException(status_code=400, detail="Email cannot be empty or contain only spaces.")
+            raise HTTPException(
+                status_code=400, detail="Email cannot be empty or contain only spaces."
+            )
         if "@" not in email:
             raise HTTPException(status_code=400, detail="Invalid email format.")
         found_user.email = email
@@ -218,7 +221,9 @@ async def my_profile_edit_view(
     # Validate and update bio
     if bio is not None:
         if len(bio) > 500:
-            raise HTTPException(status_code=400, detail="Bio cannot exceed 500 characters.")
+            raise HTTPException(
+                status_code=400, detail="Bio cannot exceed 500 characters."
+            )
         found_user.bio = bio
 
     # Handle profile picture upload
@@ -229,14 +234,24 @@ async def my_profile_edit_view(
         os.makedirs("uploads", exist_ok=True)
 
         # Save the profile picture
-        image_path = f"uploads/{found_user.id}_{uuid.uuid4()}_{profile_picture.filename}"
+        image_path = (
+            f"uploads/{found_user.id}_{uuid.uuid4()}_{profile_picture.filename}"
+        )
 
         with open(image_path, "wb") as f:
             f.write(await profile_picture.read())
 
-        if found_user.profile_picture and found_user.profile_picture != "http://127.0.0.1:8000/uploads/default.jpg":
-            old_image_path = found_user.profile_picture.split("/")[-1]  # Get the filename from the URL
-            old_image_full_path = os.path.join("uploads", old_image_path)  # Construct the full path
+        if (
+            found_user.profile_picture
+            and found_user.profile_picture
+            != "http://127.0.0.1:8000/uploads/default.jpg"
+        ):
+            old_image_path = found_user.profile_picture.split("/")[
+                -1
+            ]  # Get the filename from the URL
+            old_image_full_path = os.path.join(
+                "uploads", old_image_path
+            )  # Construct the full path
             if os.path.exists(old_image_full_path):
                 os.remove(old_image_full_path)
 
@@ -255,10 +270,10 @@ async def my_profile_edit_view(
 
 
 async def change_password_view(
-        request: Request,
-        response: Response,
-        password: serializers.UserPasswordEdit,
-        db: AsyncSession,
+    request: Request,
+    response: Response,
+    password: serializers.UserPasswordEdit,
+    db: AsyncSession,
 ):
     user = await get_current_user(request=request, response=response, db=db)
     if await verify_password(password.old_password, user.password) and user:
@@ -298,7 +313,7 @@ async def logout_view(response: Response, request: Request):
 
 
 async def delete_my_account_view(
-        request: Request, response: Response, db: AsyncSession
+    request: Request, response: Response, db: AsyncSession
 ):
     user = await get_current_user(request=request, response=response, db=db)
     await db.delete(user)
