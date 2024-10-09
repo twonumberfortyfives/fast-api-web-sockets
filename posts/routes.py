@@ -30,7 +30,6 @@ async def retrieve_post(post, response: Response, page: int = None, page_size: i
         return all_posts
     else:
         all_posts = await views.retrieve_post_view(post=post, page=page, page_size=page_size, db=db)
-        response.headers["X-all-posts-count"] = f"{len(all_posts)}"
         return all_posts
 
 

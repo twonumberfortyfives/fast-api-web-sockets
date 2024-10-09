@@ -158,13 +158,11 @@ async def my_profile_view(request: Request, response: Response, db: AsyncSession
 
 
 async def retrieve_users_posts_view(user_id: int, db: AsyncSession):
-    user = await retrieve_user_view(db=db, user=str(user_id))
 
     result = await db.execute(
         select(models.DBPost)
-        .outerjoin(models.DBUser)
         .options(selectinload(models.DBPost.user))
-        .filter(models.DBPost.user_id == user.id)
+        .filter(models.DBPost.user_id == user_id)
     )
     users_posts = result.scalars().all()
     return users_posts
