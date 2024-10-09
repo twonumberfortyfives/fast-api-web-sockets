@@ -31,6 +31,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-all-posts-count"],
 )
 
 app.include_router(users_router, prefix="/api", tags=["users"])
