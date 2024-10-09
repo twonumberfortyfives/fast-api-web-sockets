@@ -48,9 +48,9 @@ async def retrieve_user(user, db: AsyncSession = Depends(get_db)):
 )
 async def retrieve_users_posts(user_id: int, response: Response, page: int = None, page_size: int = None, db: AsyncSession = Depends(get_db)):
     if page and page_size:
-        all_users_posts = await views.retrieve_users_posts_view(user_id=user_id, page=page, page_size=page_size, db=db)
+        all_users_posts = await views.get_all_users_posts_in_total(db=db, user_id=user_id)
         response.headers["X-all-posts-count"] = f"{len(all_users_posts)}"
-        return all_users_posts
+        return await views.retrieve_users_posts_view(user_id=user_id, page=page, page_size=page_size, db=db)
     return await views.retrieve_users_posts_view(user_id=user_id, page=page, page_size=page_size, db=db)
 
 

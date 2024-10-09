@@ -26,6 +26,14 @@ load_dotenv()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
+async def get_all_users_posts_in_total(db: AsyncSession, user_id: int):
+    results = await db.execute(
+        select(models.DBPost)
+        .filter(models.DBPost.user_id == user_id)
+    )
+    return results.scalars().all()
+
+
 async def get_users_from_cache(redis_client):
     cached_users = await redis_client.get("all_users")
     if cached_users:
