@@ -102,3 +102,7 @@ class UserPasswordEdit(BaseModel):
     @field_validator("new_password")
     def validate_new_password(cls, value):
         return validate_password(value)
+
+
+class UserDeleteAccountPasswordConfirm(BaseModel):
+    password: str

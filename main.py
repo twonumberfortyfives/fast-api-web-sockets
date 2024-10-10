@@ -19,6 +19,7 @@ from dependencies import get_db
 from users.routes import router as users_router
 from posts.routes import router as posts_router
 from chat.routes import router as chat_router
+from comments.routes import router as comment_router
 from users.views import get_user_by_email
 
 
@@ -40,6 +41,7 @@ app.add_middleware(
 app.include_router(users_router, prefix="/api", tags=["users"])
 app.include_router(posts_router, prefix="/api", tags=["posts"])
 app.include_router(chat_router, prefix="/api", tags=["chat"])
+app.include_router(comment_router, prefix="/api", tags=["comments"])
 
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 

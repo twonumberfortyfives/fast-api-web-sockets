@@ -272,11 +272,18 @@ async def logout_view(response: Response, request: Request):
 
 
 async def delete_my_account_view(
-    request: Request, response: Response, db: AsyncSession
+    request: Request,
+    response: Response,
+    password_confirm: serializers.UserDeleteAccountPasswordConfirm,
+    db: AsyncSession
 ):
     user = await get_current_user(request=request, response=response, db=db)
-    await db.delete(user)
-    await db.commit()
-    response.delete_cookie(key="access_token")
-    response.delete_cookie(key="refresh_token")
-    return True
+
+    if await verify_password(password_confirm.password, user.password):
+        await db.delete(user)
+        await db.commit()
+        response.delete_cookie(key="access_token")
+        response.delete_cookie(key="refresh_token")
+        return True
+    else:
+        raise HTTPException(status_code=400, detail="Invalid credentials")

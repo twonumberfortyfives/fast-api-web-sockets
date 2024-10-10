@@ -176,3 +176,12 @@ async def unlike_the_post_view(post_id: int, request: Request, response: Respons
         await db.commit()
         return {"message": "Post unliked"}
     raise HTTPException(status_code=404, detail="Like not found")
+
+
+async def get_all_posts_comments_view(post_id: int, db: AsyncSession):
+    results = await db.execute(
+        select(models.DBComment)
+        .filter(models.DBComment.post_id == post_id)
+    )
+    comments = results.scalars().all()
+    return comments

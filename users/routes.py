@@ -123,10 +123,16 @@ async def logout(response: Response, request: Request):
 
 @router.delete("/my-profile")
 async def delete_my_account(
-    request: Request, response: Response, db: AsyncSession = Depends(get_db)
+    request: Request,
+    response: Response,
+    password_confirm: serializers.UserDeleteAccountPasswordConfirm,
+    db: AsyncSession = Depends(get_db)
 ):
     result = await views.delete_my_account_view(
-        request=request, response=response, db=db
+        request=request,
+        response=response,
+        password_confirm=password_confirm,
+        db=db
     )
     if result:
         return {"message": "Your account has been deleted."}

@@ -1,4 +1,3 @@
-from pydantic import computed_field
 from sqlalchemy import (
     Integer,
     Column,
@@ -59,6 +58,10 @@ class DBUser(Base):
         "DBPostLike", back_populates="user", cascade="all, delete-orphan"
     )
 
+    comments = relationship(
+        "DBComment", back_populates="user", cascade="all, delete-orphan"
+    )
+
 
 class DBPost(Base):
     __tablename__ = "posts"
@@ -75,6 +78,11 @@ class DBPost(Base):
 
     likes = relationship(
         "DBPostLike",
+        back_populates="post",
+        cascade="all, delete-orphan",
+    )
+    comments = relationship(
+        "DBComment",
         back_populates="post",
         cascade="all, delete-orphan",
     )
@@ -152,3 +160,20 @@ class DBPostLike(Base):
         UniqueConstraint("user_id", "post_id", name="unique_user_post_like"),
         Index("idx_user_post", "user_id", "post_id"),
     )
+
+
+class DBComment(Base):
+    __tablename__ = "comments"
+
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    post_id = Column(Integer, ForeignKey("posts.id"), nullable=False)
+    content = Column(String(500), nullable=False)
+    created_at = Column(DateTime, default=func.now())
+
+    parent_id = Column(Integer, ForeignKey("comments.id"), nullable=True)
+
+    user = relationship("DBUser", back_populates="comments")
+    post = relationship("DBPost", back_populates="comments")
+    parent = relationship("DBComment", remote_side=[id], back_populates="replies")
+    replies = relationship("DBComment", back_populates="parent", cascade="all, delete-orphan")
