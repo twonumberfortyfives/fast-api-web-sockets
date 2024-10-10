@@ -26,10 +26,11 @@ async def get_all_posts_view(db: AsyncSession):
         select(models.DBPost)
         .outerjoin(models.DBUser)
         .options(selectinload(models.DBPost.user))
-        .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
+        .outerjoin(models.DBPostLike)
+        .options(selectinload(models.DBPost.likes))
+        .order_by(models.DBPost.id.desc())
     )
     posts = result.scalars().all()
-
     if posts:
         return posts
 
@@ -43,10 +44,12 @@ async def retrieve_post_view(post, db: AsyncSession):
             select(models.DBPost)
             .outerjoin(models.DBUser)
             .options(selectinload(models.DBPost.user))
+            .outerjoin(models.DBPostLike)
+            .options(selectinload(models.DBPost.likes))
             .filter(models.DBPost.id == post)
             .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
         )
-        post = result.scalar_one_or_none()
+        post = result.scalars().first()
         if post:
             return [post]
 
@@ -55,6 +58,8 @@ async def retrieve_post_view(post, db: AsyncSession):
             select(models.DBPost)
             .outerjoin(models.DBUser)
             .options(selectinload(models.DBPost.user))
+            .outerjoin(models.DBPostLike)
+            .options(selectinload(models.DBPost.likes))
             .filter(models.DBPost.topic.ilike(f"%{post}%"))
             .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
         )
@@ -150,11 +155,11 @@ async def like_the_post_view(post_id: int, request: Request, response: Response,
         await db.refresh(new_like)
         return new_like
     except IntegrityError:
-        await db.rollback()  # Roll back the session in case of an error
-        raise HTTPException(status_code=400, detail="You have already liked this post.")
+        await db.rollback()
+        raise HTTPException(status_code=400, detail="You already liked this post or post does not exist")
     except Exception as e:
-        await db.rollback()  # Roll back the session for any other exceptions
-        raise HTTPException(status_code=500, detail=str(e))
+        await db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 async def unlike_the_post_view(post_id: int, request: Request, response: Response, db: AsyncSession):

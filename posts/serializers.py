@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import BaseModel, Field, EmailStr, field_validator
+from pydantic import BaseModel, Field, EmailStr, field_validator, model_validator
 from datetime import datetime, timezone
 
 
@@ -44,6 +44,8 @@ class PostList(BaseModel):
     tags: list[str]
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     user: Optional[UserForPostList]
+    likes_count: int = 0  # Add a field for counting likes
+    is_liked: bool = False
 
     class Config:
         from_attributes = True
@@ -52,6 +54,11 @@ class PostList(BaseModel):
             .isoformat()
             .replace("+00:00", "Z")
         }
+
+    @model_validator(mode="before")
+    def count_all_likes(cls, values):
+        values.likes_count = len(values.likes)
+        return values
 
 
 class PostCreate(BaseModel):

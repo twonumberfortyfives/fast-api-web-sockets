@@ -136,6 +136,8 @@ async def retrieve_users_posts_view(user_id: int, db: AsyncSession):
         select(models.DBPost)
         .outerjoin(models.DBUser)
         .options(selectinload(models.DBPost.user))
+        .outerjoin(models.DBPostLike)
+        .options(selectinload(models.DBPost.likes))
         .filter(models.DBPost.user_id == user_id)
         .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
     )

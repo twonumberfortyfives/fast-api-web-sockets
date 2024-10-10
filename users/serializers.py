@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from pydantic import BaseModel, EmailStr, constr, field_validator, Field
+from pydantic import BaseModel, EmailStr, constr, field_validator, Field, model_validator
 
 from posts.serializers import Post
 
@@ -15,14 +15,6 @@ def validate_password(value: str) -> str:
     if not any(char.islower() for char in value):
         raise ValueError("Password must contain at least one lowercase letter")
     return value
-
-
-class User(BaseModel):
-    id: int
-    email: EmailStr
-    profile_picture: str
-    username: str
-    password: str
 
 
 class UserCreate(BaseModel):
@@ -75,6 +67,7 @@ class UserPosts(BaseModel):
     tags: list[str]
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     user: PostsAuthor
+    likes_count: int = 0
 
     class Config:
         from_attributes = True
@@ -83,6 +76,11 @@ class UserPosts(BaseModel):
             .isoformat()
             .replace("+00:00", "Z")
         }
+
+    @model_validator(mode="before")
+    def count_all_likes(cls, values):
+        values.likes_count = len(values.likes)
+        return values
 
 
 class UserMyProfile(BaseModel):
@@ -95,25 +93,6 @@ class UserMyProfile(BaseModel):
 
     class Config:
         from_attributes = True
-
-
-class UserEdit(BaseModel):
-    email: EmailStr
-    username: str
-    bio: str | None
-
-    @field_validator("username")
-    def validate_username(cls, username):
-        if not username.strip():
-            raise ValueError("Username cannot be empty or contain only spaces.")
-        return username
-
-    # Custom validator for email
-    @field_validator("email")
-    def validate_email(cls, email):
-        if not email.strip():
-            raise ValueError("Email cannot be empty or contain only spaces.")
-        return email
 
 
 class UserPasswordEdit(BaseModel):
