@@ -180,6 +180,8 @@ async def my_profile_edit_view(
                 status_code=400, detail="Bio cannot exceed 500 characters."
             )
         found_user.bio = bio
+    if bio is None:
+        found_user.bio = bio
 
     # Handle profile picture upload
     if profile_picture:
