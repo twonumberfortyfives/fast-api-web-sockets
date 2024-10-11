@@ -78,8 +78,3 @@ async def delete_post(
     return await views.delete_post_view(
         post_id=post_id, db=db, request=request, response=response
     )
-
-
-@router.post("/posts/{post_id}/comments")
-async def get_all_posts_comments(post_id: int, db: AsyncSession = Depends(get_db)):
-    return await views.get_all_posts_comments_view(post_id=post_id, db=db)

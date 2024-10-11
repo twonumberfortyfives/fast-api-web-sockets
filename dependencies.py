@@ -13,7 +13,7 @@ from db.models import Role
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
-ACCESS_TOKEN_EXPIRE_TIME_MINUTES = timedelta(minutes=15)
+ACCESS_TOKEN_EXPIRE_TIME_MINUTES = timedelta(minutes=1)
 REFRESH_TOKEN_EXPIRE_TIME_DAYS = timedelta(days=30)
 
 

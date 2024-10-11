@@ -1,29 +1,36 @@
 import os
+import re
 
+import aiohttp
 import jwt
 from fastapi import (
     FastAPI,
     WebSocket,
     WebSocketDisconnect,
     Depends,
+    Request,
 )
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi_pagination import add_pagination
+from fastapi.templating import Jinja2Templates
+
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 
 from db import models
 from db.engine import init_db
-from dependencies import get_db
+from dependencies import get_current_user, get_db
 from users.routes import router as users_router
 from posts.routes import router as posts_router
 from chat.routes import router as chat_router
 from comments.routes import router as comment_router
-from users.views import get_user_by_email
-
 
 app = FastAPI()
+templates = Jinja2Templates(directory="templates")
 
 add_pagination(app)
 
@@ -51,81 +58,113 @@ async def on_startup():
     await init_db()
 
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: list[WebSocket] = []
+        self.active_connections: dict[int, list[WebSocket]] = {}
 
-    async def connect(self, websocket: WebSocket):
+    async def connect(self, websocket: WebSocket, group_name: int):
         await websocket.accept()
-        self.active_connections.append(websocket)
+        if group_name not in self.active_connections:
+            self.active_connections[group_name] = []
+        self.active_connections[group_name].append(websocket)
 
-    def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
+    def disconnect(self, websocket: WebSocket, group_name: int):
+        self.active_connections[group_name].remove(websocket)
+        if not self.active_connections[group_name]:
+            del self.active_connections[group_name]
 
-    async def send_personal_message(
-        self, message: str, websocket: WebSocket, db: AsyncSession, receiver_id: int
-    ):
-        access_token = websocket.cookies.get("access_token")
-        user_data = jwt.decode(
-            access_token,
-            os.getenv("SECRET_KEY"),
-            algorithms=[os.getenv("ALGORITHM")],
-        )
-        user_email = user_data.get("sub")
-        user_id = (await get_user_by_email(db=db, email=user_email)).id
-
-        db_message = models.DBMessage(
-            chat_id=1,
-            sender_id=user_id,
-            receiver_id=receiver_id,
-            content=message,
-        )
-        db.add(db_message)
-        await db.commit()
-        await db.refresh(db_message)
+    async def send_personal_message(self, message: str, websocket: WebSocket):
         await websocket.send_text(message)
 
-    async def broadcast(self, message: str):
-        for connection in self.active_connections:
-            await connection.send_text(message)
+    async def broadcast(self, message: str, group_name: int):
+        if group_name in self.active_connections:
+            for connection in self.active_connections[group_name]:
+                await connection.send_text(message)
 
 
 manager = ConnectionManager()
 
 
-async def get_current_user_websocket(
-    websocket,
-    db: AsyncSession = Depends(get_db),
-):
-    access_token = websocket.cookies.get("access_token")
-    refresh_token = websocket.cookies.get("refresh_token")
+@app.get("/api/posts/{post_id}/all-comments/")
+async def get(post_id: int, request: Request, db: AsyncSession = Depends(get_db)):
+    comments_query = await db.execute(
+        select(models.DBComment)
+        .outerjoin(models.DBUser)
+        .options(selectinload(models.DBComment.user))
+        .filter(models.DBComment.post_id == post_id)
+        .order_by(models.DBComment.created_at)
+    )
+    comments = comments_query.scalars().all()
 
-    return access_token
+    # Create the message list for the chat
+    message_list = "".join(
+        f"<li>{comment.user.email}: {comment.content}</li>"
+        for comment in comments
+    )
+
+    return templates.TemplateResponse("chat.html", {"request": request, "message_list": message_list})
 
 
-@app.websocket("/send-message/{receiver_id}")
-async def websocket_endpoint(
-    websocket: WebSocket,
-    receiver_id: int,
-    db: AsyncSession = Depends(get_db),
-):
-    await manager.connect(websocket)
-    try:
-        user = await get_current_user_websocket(websocket, db)
-        if not user:
-            await websocket.close(code=1008)
-            return
+async def fetch(url, cookies):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, cookies=cookies) as response:
+            if response.status == 200:
+                return response
+            else:
+                return {"error": f"Failed to fetch data, status: {response.status}"}
 
-        while True:
+
+@app.websocket("/ws/{post_id}")
+async def websocket_endpoint(websocket: WebSocket, post_id: int, db: AsyncSession = Depends(get_db)):
+    await manager.connect(websocket, post_id)
+    user_email = None
+    while True:
+        try:
+            access_token = websocket.cookies.get("access_token")
+            user_data = jwt.decode(
+                access_token.encode('utf-8'),
+                os.getenv("SECRET_KEY"),
+                algorithms=[os.getenv("ALGORITHM")]
+            )
+            user_email = user_data.get("sub")
+
+            current_user_payload = await db.execute(
+                select(models.DBUser)
+                .filter(models.DBUser.email == user_email)
+            )
+            current_user = current_user_payload.scalar()
+
             data = await websocket.receive_text()
-            await manager.send_personal_message(data, websocket, db, receiver_id)
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
-    except Exception as e:
-        print(f"Error in WebSocket: {e}")
-        await websocket.close(code=1008)
+
+            if data != "":
+
+                await manager.broadcast(f"{user_email}: {data}", post_id)
+
+                new_comment = models.DBComment(
+                    user_id=current_user.id,
+                    post_id=post_id,
+                    content=data
+                )
+
+                db.add(new_comment)
+                await db.commit()
+                await db.refresh(new_comment)
+
+        except jwt.ExpiredSignatureError:
+            url = "http://localhost:8000/api/is-authenticated/"
+            response = await fetch(url, websocket.cookies)  # giving the cookies what we have at the moment.
+            set_cookie_header = response.headers.get("Set-Cookie")
+
+            match = re.search(r"access_token=([^;]+)", set_cookie_header)
+            if match:
+                access_token_value = match.group(1)
+                websocket.cookies["access_token"] = access_token_value
+            else:
+                await websocket.send_text("Failed to refresh access token. Please log in again.")
+                await websocket.close()
+                break
+        except WebSocketDisconnect:
+            manager.disconnect(websocket, post_id)
+            await manager.broadcast(f"Client #{user_email} left the chat", post_id)
+            break
+
