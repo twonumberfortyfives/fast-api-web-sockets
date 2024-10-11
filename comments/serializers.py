@@ -4,10 +4,13 @@ from pydantic import BaseModel, Field
 
 
 class CommentList(BaseModel):
-    id: int
+    id: int | None = None
     user_id: int
+    username: str
+    email: str
+    profile_picture: str
     post_id: int
-    content: int
+    content: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Config:

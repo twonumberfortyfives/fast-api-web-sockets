@@ -1,3 +1,4 @@
+import json
 import os
 import re
 
@@ -10,12 +11,13 @@ from fastapi import (
     Depends,
     Request,
 )
-from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_pagination import add_pagination
 from fastapi.templating import Jinja2Templates
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import HTTPException
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -23,11 +25,12 @@ from sqlalchemy.orm import selectinload
 
 from db import models
 from db.engine import init_db
-from dependencies import get_current_user, get_db
+from dependencies import get_db
 from users.routes import router as users_router
 from posts.routes import router as posts_router
 from chat.routes import router as chat_router
 from comments.routes import router as comment_router
+from comments.serializers import CommentList
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -86,7 +89,12 @@ manager = ConnectionManager()
 
 
 @app.get("/api/posts/{post_id}/all-comments/")
-async def get(post_id: int, request: Request, db: AsyncSession = Depends(get_db)):
+async def get_comments(
+        post_id: int,
+        request: Request,
+        response_type: str = "json",
+        db: AsyncSession = Depends(get_db)
+):
     comments_query = await db.execute(
         select(models.DBComment)
         .outerjoin(models.DBUser)
@@ -96,13 +104,30 @@ async def get(post_id: int, request: Request, db: AsyncSession = Depends(get_db)
     )
     comments = comments_query.scalars().all()
 
-    # Create the message list for the chat
-    message_list = "".join(
-        f"<li>{comment.user.email}: {comment.content}</li>"
+    # Serialize comments using a list comprehension
+    serialized_comments = [
+        {
+            "id": comment.id,
+            "user_id": comment.user_id,
+            "user_email": comment.user.email,
+            "username": comment.user.username,
+            "user_profile_picture": comment.user.profile_picture,
+            "post_id": comment.post_id,
+            "content": comment.content,
+            "created_at": comment.created_at.isoformat() + "Z"
+        }
         for comment in comments
-    )
+    ]
 
-    return templates.TemplateResponse("chat.html", {"request": request, "message_list": message_list})
+    if response_type == "html":
+        # If 'response_type' is 'html', render the 'chat.html' template
+        return templates.TemplateResponse(
+            "chat.html",
+            {"request": request, "comments": serialized_comments, "post_id": post_id}
+        )
+
+    # Default to JSON response
+    return JSONResponse(content={"comments": serialized_comments})
 
 
 async def fetch(url, cookies):
@@ -134,21 +159,33 @@ async def websocket_endpoint(websocket: WebSocket, post_id: int, db: AsyncSessio
             )
             current_user = current_user_payload.scalar()
 
-            data = await websocket.receive_text()
+            data = await websocket.receive_json()
 
             if data != "":
 
-                await manager.broadcast(f"{user_email}: {data}", post_id)
+                try:
+                    comment_serializer = CommentList(
+                        user_id=current_user.id,
+                        username=current_user.username,
+                        email=current_user.email,
+                        profile_picture=current_user.profile_picture,
+                        post_id=post_id,
+                        content=data,
+                    )
 
-                new_comment = models.DBComment(
-                    user_id=current_user.id,
-                    post_id=post_id,
-                    content=data
-                )
+                    new_comment = models.DBComment(
+                        user_id=comment_serializer.user_id,
+                        post_id=comment_serializer.post_id,
+                        content=comment_serializer.content,
+                    )
 
-                db.add(new_comment)
-                await db.commit()
-                await db.refresh(new_comment)
+                    db.add(new_comment)
+                    await db.commit()
+                    await db.refresh(new_comment)
+                except Exception as e:
+                    raise HTTPException(status_code=400, detail=str(e))
+
+                await manager.broadcast(comment_serializer.json(), post_id)
 
         except jwt.ExpiredSignatureError:
             url = "http://localhost:8000/api/is-authenticated/"
@@ -167,4 +204,6 @@ async def websocket_endpoint(websocket: WebSocket, post_id: int, db: AsyncSessio
             manager.disconnect(websocket, post_id)
             await manager.broadcast(f"Client #{user_email} left the chat", post_id)
             break
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
 

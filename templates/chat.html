@@ -1,37 +1,48 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Chat</title>
-</head>
-<body>
-    <h1>WebSocket Chat</h1>
-    <form action="" onsubmit="sendMessage(event)">
-        <input type="text" id="messageText" autocomplete="off"/>
-        <button>Send</button>
-    </form>
-    <ul id='messages'>
-        {{ message_list|safe }}
-    </ul>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comments for Post</title>
     <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const chatId = urlParams.get('post_id') || 'default';
-
-        var ws = new WebSocket(`ws://localhost:8000/ws/${chatId}`);
+        const postId = {{ post_id }};
+        const ws = new WebSocket(`ws://localhost:8000/ws/${postId}`);
 
         ws.onmessage = function(event) {
-            var messages = document.getElementById('messages');
-            var message = document.createElement('li');
-            var content = document.createTextNode(event.data);
-            message.appendChild(content);
-            messages.appendChild(message);
+            const commentData = JSON.parse(event.data);
+            const commentsList = document.getElementById('comments-list');
+            const newComment = document.createElement('li');
+            newComment.innerHTML = `<strong>${commentData.email}:</strong>
+                                    <img src="${commentData.profile_picture}" alt="Profile Picture" width="30" height="30">
+                                    ${commentData.content} (${commentData.created_at})`;
+            commentsList.appendChild(newComment);
         };
 
-        function sendMessage(event) {
-            var input = document.getElementById("messageText");
-            ws.send(input.value);
-            input.value = '';
-            event.preventDefault();
+        ws.onclose = function() {
+            alert("WebSocket connection closed. Please refresh the page.");
+        };
+
+        function sendComment() {
+            const commentInput = document.getElementById("comment-input");
+            if (commentInput.value) {
+                ws.send(JSON.stringify(commentInput.value));
+                commentInput.value = '';
+            }
         }
     </script>
+</head>
+<body>
+    <h1>Comments</h1>
+    <ul id="comments-list">
+        {% for comment in comments %}
+            <li>
+                <strong>{{ comment.user_email }}:</strong>
+                <img src="{{ comment.user_profile_picture }}" alt="Profile Picture" width="30" height="30">
+                {{ comment.content }} ({{ comment.created_at }})
+            </li>
+        {% endfor %}
+    </ul>
+    <input type="text" id="comment-input" placeholder="Type your comment">
+    <button onclick="sendComment()">Send</button>
 </body>
 </html>
