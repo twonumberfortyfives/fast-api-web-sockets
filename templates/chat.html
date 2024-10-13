@@ -37,7 +37,7 @@
         {% for comment in comments %}
             <li>
                 <strong>{{ comment.user_email }}:</strong>
-                <img src="{{ comment.user_profile_picture }}" alt="Profile Picture" width="30" height="30">
+                <img src="{{ comment.profile_picture }}" alt="Profile Picture" width="30" height="30">
                 {{ comment.content }} ({{ comment.created_at }})
             </li>
         {% endfor %}

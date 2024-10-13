@@ -111,7 +111,7 @@ async def get_comments(
             "user_id": comment.user_id,
             "user_email": comment.user.email,
             "username": comment.user.username,
-            "user_profile_picture": comment.user.profile_picture,
+            "profile_picture": comment.user.profile_picture,
             "post_id": comment.post_id,
             "content": comment.content,
             "created_at": comment.created_at.isoformat() + "Z"
