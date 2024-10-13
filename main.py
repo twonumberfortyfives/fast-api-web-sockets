@@ -92,7 +92,7 @@ manager = ConnectionManager()
 async def get_comments(
         post_id: int,
         request: Request,
-        response_type: str = "json",
+        response_type: str = "html",
         db: AsyncSession = Depends(get_db)
 ):
     comments_query = await db.execute(
@@ -160,6 +160,8 @@ async def websocket_endpoint(websocket: WebSocket, post_id: int, db: AsyncSessio
             current_user = current_user_payload.scalar()
 
             data = await websocket.receive_json()
+
+            print(data)
 
             if data != "":
 
