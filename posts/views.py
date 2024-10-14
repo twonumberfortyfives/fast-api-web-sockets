@@ -44,10 +44,12 @@ async def retrieve_post_view(post, db: AsyncSession):
         post = int(post)
         result = await db.execute(
             select(models.DBPost)
-            .outerjoin(models.DBUser)
+            .outerjoin(models.DBUser, models.DBPost.user_id == models.DBUser.id)
             .options(selectinload(models.DBPost.user))
-            .outerjoin(models.DBPostLike)
+            .outerjoin(models.DBPostLike, models.DBPost.id == models.DBPostLike.post_id)
             .options(selectinload(models.DBPost.likes))
+            .outerjoin(models.DBComment, models.DBPost.id == models.DBComment.post_id)
+            .options(selectinload(models.DBPost.comments))
             .filter(models.DBPost.id == post)
             .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
         )
@@ -58,10 +60,12 @@ async def retrieve_post_view(post, db: AsyncSession):
     if isinstance(post, str):
         result = await db.execute(
             select(models.DBPost)
-            .outerjoin(models.DBUser)
+            .outerjoin(models.DBUser, models.DBPost.user_id == models.DBUser.id)
             .options(selectinload(models.DBPost.user))
-            .outerjoin(models.DBPostLike)
+            .outerjoin(models.DBPostLike, models.DBPost.id == models.DBPostLike.post_id)
             .options(selectinload(models.DBPost.likes))
+            .outerjoin(models.DBComment, models.DBPost.id == models.DBComment.post_id)
+            .options(selectinload(models.DBPost.comments))
             .filter(models.DBPost.topic.ilike(f"%{post}%"))
             .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
         )

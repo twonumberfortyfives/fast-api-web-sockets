@@ -127,7 +127,7 @@ async def login_view(
 
 
 async def my_profile_view(request: Request, response: Response, db: AsyncSession):
-    redis_client = await aioredis.from_url("redis://localhost:6379/0")
+    # redis_client = await aioredis.from_url("redis://localhost:6379/0")
     return await get_current_user(request=request, response=response, db=db)
 
 
@@ -138,6 +138,8 @@ async def retrieve_users_posts_view(user_id: int, db: AsyncSession):
         .options(selectinload(models.DBPost.user))
         .outerjoin(models.DBPostLike)
         .options(selectinload(models.DBPost.likes))
+        .outerjoin(models.DBComment, models.DBComment.post_id == models.DBPost.id)
+        .options(selectinload(models.DBPost.comments))
         .filter(models.DBPost.user_id == user_id)
         .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
     )

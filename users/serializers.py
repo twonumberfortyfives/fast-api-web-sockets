@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 from pydantic import BaseModel, EmailStr, constr, field_validator, Field, model_validator
 
-from posts.serializers import Post
+from posts.serializers import Post, PostList
 
 
 def validate_password(value: str) -> str:
@@ -51,36 +51,6 @@ class UserList(BaseModel):
 
     class Config:
         from_attributes = True
-
-
-class PostsAuthor(BaseModel):
-    id: int
-    username: str
-    email: EmailStr
-    profile_picture: str
-
-
-class UserPosts(BaseModel):
-    id: int
-    topic: str
-    content: str
-    tags: list[str]
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    user: PostsAuthor
-    likes_count: int = 0
-
-    class Config:
-        from_attributes = True
-        json_encoders = {
-            datetime: lambda v: v.astimezone(timezone.utc)
-            .isoformat()
-            .replace("+00:00", "Z")
-        }
-
-    @model_validator(mode="before")
-    def count_all_likes(cls, values):
-        values.likes_count = len(values.likes)
-        return values
 
 
 class UserMyProfile(BaseModel):

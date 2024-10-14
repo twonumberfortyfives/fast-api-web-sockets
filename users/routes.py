@@ -7,6 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db import models
 from dependencies import get_db, require_role
 from users import views, serializers
+from posts.serializers import PostList
+
 
 router = APIRouter()
 
@@ -41,7 +43,7 @@ async def retrieve_user(user, db: AsyncSession = Depends(get_db)):
 async def retrieve_users_posts(
     user_id: int,
     db: AsyncSession = Depends(get_db),
-) -> Page[serializers.UserPosts]:
+) -> Page[PostList]:
     return paginate(await views.retrieve_users_posts_view(
         user_id=user_id, db=db
     ))
