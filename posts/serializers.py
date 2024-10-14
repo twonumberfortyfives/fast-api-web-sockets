@@ -45,6 +45,7 @@ class PostList(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     user: Optional[UserForPostList]
     likes_count: int = 0  # Add a field for counting likes
+    comments_count: int = 0
     is_liked: bool = False
 
     class Config:
@@ -56,8 +57,9 @@ class PostList(BaseModel):
         }
 
     @model_validator(mode="before")
-    def count_all_likes(cls, values):
+    def count_all_likes_and_comments(cls, values):
         values.likes_count = len(values.likes)
+        values.comments_count = len(values.comments)
         return values
 
 

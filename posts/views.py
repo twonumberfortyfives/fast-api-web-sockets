@@ -24,10 +24,12 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 async def get_all_posts_view(db: AsyncSession):
     result = await db.execute(
         select(models.DBPost)
-        .outerjoin(models.DBUser)
+        .outerjoin(models.DBUser, models.DBPost.user_id == models.DBUser.id)  # mapped manually.
         .options(selectinload(models.DBPost.user))
-        .outerjoin(models.DBPostLike)
+        .outerjoin(models.DBPostLike, models.DBPost.id == models.DBPostLike.post_id)  # mapped manually.
         .options(selectinload(models.DBPost.likes))
+        .outerjoin(models.DBComment, models.DBPost.id == models.DBComment.post_id)  # mapped manually.
+        .options(selectinload(models.DBPost.comments))
         .order_by(models.DBPost.id.desc())
     )
     posts = result.scalars().all()
