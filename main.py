@@ -14,14 +14,12 @@ from fastapi import (
 from fastapi.staticfiles import StaticFiles
 
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi_pagination import add_pagination
+from fastapi_pagination import add_pagination, paginate, Page
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import JSONResponse
 from fastapi.exceptions import HTTPException
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import selectinload
 
 from db import models
 from db.engine import init_db
@@ -31,6 +29,7 @@ from posts.routes import router as posts_router
 from chat.routes import router as chat_router
 from comments.routes import router as comment_router
 from comments.serializers import CommentList
+from comments import views
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -86,48 +85,6 @@ class ConnectionManager:
 
 
 manager = ConnectionManager()
-
-
-@app.get("/api/posts/{post_id}/all-comments/")
-async def get_comments(
-        post_id: int,
-        request: Request,
-        response_type: str = "html",
-        db: AsyncSession = Depends(get_db)
-):
-    comments_query = await db.execute(
-        select(models.DBComment)
-        .outerjoin(models.DBUser)
-        .options(selectinload(models.DBComment.user))
-        .filter(models.DBComment.post_id == post_id)
-        .order_by(models.DBComment.created_at)
-    )
-    comments = comments_query.scalars().all()
-
-    # Serialize comments using a list comprehension
-    serialized_comments = [
-        {
-            "id": comment.id,
-            "user_id": comment.user_id,
-            "user_email": comment.user.email,
-            "username": comment.user.username,
-            "profile_picture": comment.user.profile_picture,
-            "post_id": comment.post_id,
-            "content": comment.content,
-            "created_at": comment.created_at.isoformat() + "Z"
-        }
-        for comment in comments
-    ]
-
-    if response_type == "html":
-        # If 'response_type' is 'html', render the 'chat.html' template
-        return templates.TemplateResponse(
-            "chat.html",
-            {"request": request, "comments": serialized_comments, "post_id": post_id}
-        )
-
-    # Default to JSON response
-    return JSONResponse(content={"comments": serialized_comments})
 
 
 async def fetch(url, cookies):
