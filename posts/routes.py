@@ -2,6 +2,7 @@ from typing import Union
 
 from fastapi import Depends, Request, APIRouter, Response
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from dependencies import get_db
 from posts import serializers, views
 from fastapi_pagination import Page, paginate

@@ -11,6 +11,7 @@ async def get_all_comments_view(db: AsyncSession, post_id: int):
         .outerjoin(models.DBUser)
         .options(selectinload(models.DBComment.user))
         .filter(models.DBComment.post_id == post_id)
+        .distinct()
         .order_by(models.DBComment.created_at)
     )
     comments = comments_query.scalars().all()

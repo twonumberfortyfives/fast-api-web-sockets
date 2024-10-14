@@ -1,8 +1,6 @@
-from datetime import datetime, timezone
+from pydantic import BaseModel, EmailStr, constr, field_validator
 
-from pydantic import BaseModel, EmailStr, constr, field_validator, Field, model_validator
-
-from posts.serializers import Post, PostList
+from posts.serializers import Post
 
 
 def validate_password(value: str) -> str:

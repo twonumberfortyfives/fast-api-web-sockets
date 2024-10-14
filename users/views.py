@@ -141,6 +141,7 @@ async def retrieve_users_posts_view(user_id: int, db: AsyncSession):
         .outerjoin(models.DBComment, models.DBComment.post_id == models.DBPost.id)
         .options(selectinload(models.DBPost.comments))
         .filter(models.DBPost.user_id == user_id)
+        .distinct()
         .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
     )
     users_posts = result.scalars().all()

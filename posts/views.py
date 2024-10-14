@@ -30,6 +30,7 @@ async def get_all_posts_view(db: AsyncSession):
         .options(selectinload(models.DBPost.likes))
         .outerjoin(models.DBComment, models.DBPost.id == models.DBComment.post_id)  # mapped manually.
         .options(selectinload(models.DBPost.comments))
+        .distinct()
         .order_by(models.DBPost.id.desc())
     )
     posts = result.scalars().all()
@@ -51,6 +52,7 @@ async def retrieve_post_view(post, db: AsyncSession):
             .outerjoin(models.DBComment, models.DBPost.id == models.DBComment.post_id)
             .options(selectinload(models.DBPost.comments))
             .filter(models.DBPost.id == post)
+            .distinct()
             .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
         )
         post = result.scalars().first()
@@ -67,6 +69,7 @@ async def retrieve_post_view(post, db: AsyncSession):
             .outerjoin(models.DBComment, models.DBPost.id == models.DBComment.post_id)
             .options(selectinload(models.DBPost.comments))
             .filter(models.DBPost.topic.ilike(f"%{post}%"))
+            .distinct()
             .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
         )
         post = result.scalars().all()
@@ -174,7 +177,7 @@ async def unlike_the_post_view(post_id: int, request: Request, response: Respons
         select(models.DBPostLike)
         .filter(models.DBPostLike.user_id == current_user_id)
         .filter(models.DBPostLike.post_id == post_id)
-
+        .distinct()
     )
     like_found = result.scalar_one_or_none()
     if like_found:
