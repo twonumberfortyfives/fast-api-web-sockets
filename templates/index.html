@@ -1,104 +1,32 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebSocket Chat</title>
-  <style>
-      body {
-          font-family: Arial, sans-serif;
-      }
-
-      #messages {
-          border: 1px solid black;
-          height: 300px;
-          overflow-y: auto;
-          margin-bottom: 10px;
-          padding: 10px;
-      }
-
-      #user-info {
-          font-weight: bold;
-          margin-bottom: 10px;
-      }
-  </style>
-</head>
-<body>
-<h1>Chat with WebSocket</h1>
-
-<div id="user-info"></div>
-<div id="messages"></div>
-
-<input type="text" id="messageInput" placeholder="Type your message..."/>
-<button id="sendButton">Send</button>
-
-<script>
-    // Open a WebSocket connection to the FastAPI server
-    let receiver_id = 34;
-    const ws = new WebSocket(`ws://localhost:8000/send-message/${receiver_id}`);
-
-    // Function to display messages in the chat window
-    function displayMessage(message) {
-        const messagesDiv = document.getElementById('messages');
-        const newMessage = document.createElement('div');
-        newMessage.textContent = message;
-        messagesDiv.appendChild(newMessage);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;  // Scroll to bottom
-    }
-
-    // Function to display the user email in the user info section
-    function displayUserInfo(userEmail) {
-        const userInfoDiv = document.getElementById('user-info');
-        userInfoDiv.textContent = `Logged in as: ${userEmail}`;
-    }
-
-    // Function to send messages through WebSocket
-    function sendMessage() {
-        const input = document.getElementById('messageInput');
-        const message = input.value.trim();
-        if (message) {
-            ws.send(message);  // Send the message to the WebSocket server
-            input.value = '';   // Clear the input field
-        }
-    }
-
-    // Attach the sendMessage function to the button click event
-    document.getElementById('sendButton').onclick = sendMessage;
-
-    // Event listener for receiving messages from the WebSocket server
-    ws.onmessage = function (event) {
-        const message = JSON.parse(event.data);
-
-        if (message.type === "token_refresh") {
-            // Update cookies with new tokens
-            document.cookie = `access_token=${message.access_token}; path=/; HttpOnly`;
-            document.cookie = `refresh_token=${message.refresh_token}; path=/; HttpOnly`;
-        } else {
-            displayMessage(message);  // Display chat messages
-        }
-    };
-
-    // Event listener for WebSocket connection open
-    ws.onopen = function () {
-        displayMessage('Connected to the chat');
-    };
-
-    // Event listener for WebSocket connection close
-    ws.onclose = function () {
-        displayMessage('Disconnected from the chat');
-    };
-
-    // Event listener for WebSocket connection error
-    ws.onerror = function () {
-        displayMessage('Error connecting to the chat');
-    };
-
-    // Optional: Handle the Enter key for sending messages
-    document.getElementById('messageInput').addEventListener('keypress', function (event) {
-        if (event.key === 'Enter') {
-            sendMessage();
-        }
-    });
-</script>
-</body>
+<html>
+    <head>
+        <title>Chat</title>
+    </head>
+    <body>
+        <h1>WebSocket Chat</h1>
+        <h2>Your ID: <span id="ws-id"></span></h2>
+        <form action="" onsubmit="sendMessage(event)">
+            <input type="text" id="messageText" autocomplete="off"/>
+            <button>Send</button>
+        </form>
+        <ul id='messages'>
+        </ul>
+        <script>
+            var ws = new WebSocket(`ws://localhost:8000/ws/1`);
+            ws.onmessage = function(event) {
+                var messages = document.getElementById('messages')
+                var message = document.createElement('li')
+                var content = document.createTextNode(event.data)
+                message.appendChild(content)
+                messages.appendChild(message)
+            };
+            function sendMessage(event) {
+                var input = document.getElementById("messageText")
+                ws.send(JSON.stringify(input.value))
+                input.value = ''
+                event.preventDefault()
+            }
+        </script>
+    </body>
 </html>

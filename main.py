@@ -1,4 +1,3 @@
-import json
 import os
 import re
 
@@ -9,12 +8,11 @@ from fastapi import (
     WebSocket,
     WebSocketDisconnect,
     Depends,
-    Request,
 )
 from fastapi.staticfiles import StaticFiles
 
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi_pagination import add_pagination, paginate, Page
+from fastapi_pagination import add_pagination
 from fastapi.templating import Jinja2Templates
 from fastapi.exceptions import HTTPException
 
@@ -28,8 +26,7 @@ from users.routes import router as users_router
 from posts.routes import router as posts_router
 from chat.routes import router as chat_router
 from comments.routes import router as comment_router
-from comments.serializers import CommentList
-from comments import views
+from comments.serializers import CommentList, CommentCreate
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -81,7 +78,7 @@ class ConnectionManager:
     async def broadcast(self, message: str, group_name: int):
         if group_name in self.active_connections:
             for connection in self.active_connections[group_name]:
-                await connection.send_text(message)
+                await connection.send_json(message)
 
 
 manager = ConnectionManager()
@@ -118,12 +115,9 @@ async def websocket_endpoint(websocket: WebSocket, post_id: int, db: AsyncSessio
 
             data = await websocket.receive_json()
 
-            print(data)
-
-            if data != "":
-
+            if data != "" and not None:
                 try:
-                    comment_serializer = CommentList(
+                    comment_serializer = CommentCreate(
                         user_id=current_user.id,
                         username=current_user.username,
                         email=current_user.email,
@@ -133,15 +127,16 @@ async def websocket_endpoint(websocket: WebSocket, post_id: int, db: AsyncSessio
                     )
 
                     new_comment = models.DBComment(
-                        user_id=comment_serializer.user_id,
-                        post_id=comment_serializer.post_id,
-                        content=comment_serializer.content,
+                        user_id=current_user.id,
+                        post_id=post_id,
+                        content=data,
                     )
 
                     db.add(new_comment)
                     await db.commit()
                     await db.refresh(new_comment)
                 except Exception as e:
+                    print(e)
                     raise HTTPException(status_code=400, detail=str(e))
 
                 await manager.broadcast(comment_serializer.json(), post_id)
@@ -165,4 +160,3 @@ async def websocket_endpoint(websocket: WebSocket, post_id: int, db: AsyncSessio
             break
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
-
