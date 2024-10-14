@@ -176,7 +176,9 @@ class DBComment(Base):
     user = relationship("DBUser", back_populates="comments")
     post = relationship("DBPost", back_populates="comments")
     parent = relationship("DBComment", remote_side=[id], back_populates="replies")
-    replies = relationship("DBComment", back_populates="parent", cascade="all, delete-orphan")
+    replies = relationship(
+        "DBComment", back_populates="parent", cascade="all, delete-orphan"
+    )
 
     @validates("content")
     def validate_content(self, key, value):

@@ -27,13 +27,27 @@ async def retrieve_post(
 
 
 @router.post("/posts/{post_id}/like/", response_model=serializers.Like)
-async def like_the_post(post_id: int, request: Request, response: Response, db: AsyncSession = Depends(get_db)):
-    return await views.like_the_post_view(post_id=post_id, request=request, response=response, db=db)
+async def like_the_post(
+    post_id: int,
+    request: Request,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+):
+    return await views.like_the_post_view(
+        post_id=post_id, request=request, response=response, db=db
+    )
 
 
 @router.delete("/posts/{post_id}/like/")
-async def unlike_the_post(post_id: int, request: Request, response: Response, db: AsyncSession = Depends(get_db)):
-    return await views.unlike_the_post_view(post_id=post_id, request=request, response=response, db=db)
+async def unlike_the_post(
+    post_id: int,
+    request: Request,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+):
+    return await views.unlike_the_post_view(
+        post_id=post_id, request=request, response=response, db=db
+    )
 
 
 @router.post("/posts", response_model=serializers.Post)

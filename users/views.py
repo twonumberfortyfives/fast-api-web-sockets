@@ -1,4 +1,3 @@
-import json
 import os
 import uuid
 
@@ -278,7 +277,7 @@ async def delete_my_account_view(
     request: Request,
     response: Response,
     password_confirm: serializers.UserDeleteAccountPasswordConfirm,
-    db: AsyncSession
+    db: AsyncSession,
 ):
     user = await get_current_user(request=request, response=response, db=db)
 

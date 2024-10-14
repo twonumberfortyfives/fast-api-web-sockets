@@ -44,9 +44,7 @@ async def retrieve_users_posts(
     user_id: int,
     db: AsyncSession = Depends(get_db),
 ) -> Page[PostList]:
-    return paginate(await views.retrieve_users_posts_view(
-        user_id=user_id, db=db
-    ))
+    return paginate(await views.retrieve_users_posts_view(user_id=user_id, db=db))
 
 
 @router.get("/my-profile", response_model=serializers.UserMyProfile)
@@ -128,13 +126,10 @@ async def delete_my_account(
     request: Request,
     response: Response,
     password_confirm: serializers.UserDeleteAccountPasswordConfirm,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     result = await views.delete_my_account_view(
-        request=request,
-        response=response,
-        password_confirm=password_confirm,
-        db=db
+        request=request, response=response, password_confirm=password_confirm, db=db
     )
     if result:
         return {"message": "Your account has been deleted."}

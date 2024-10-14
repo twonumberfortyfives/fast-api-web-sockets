@@ -24,11 +24,17 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 async def get_all_posts_view(db: AsyncSession):
     result = await db.execute(
         select(models.DBPost)
-        .outerjoin(models.DBUser, models.DBPost.user_id == models.DBUser.id)  # mapped manually.
+        .outerjoin(
+            models.DBUser, models.DBPost.user_id == models.DBUser.id
+        )  # mapped manually.
         .options(selectinload(models.DBPost.user))
-        .outerjoin(models.DBPostLike, models.DBPost.id == models.DBPostLike.post_id)  # mapped manually.
+        .outerjoin(
+            models.DBPostLike, models.DBPost.id == models.DBPostLike.post_id
+        )  # mapped manually.
         .options(selectinload(models.DBPost.likes))
-        .outerjoin(models.DBComment, models.DBPost.id == models.DBComment.post_id)  # mapped manually.
+        .outerjoin(
+            models.DBComment, models.DBPost.id == models.DBComment.post_id
+        )  # mapped manually.
         .options(selectinload(models.DBPost.comments))
         .distinct()
         .order_by(models.DBPost.id.desc())
@@ -80,7 +86,7 @@ async def retrieve_post_view(post, db: AsyncSession):
 
 
 async def create_post_view(
-        db: AsyncSession, request: Request, response: Response, post: serializers.PostCreate
+    db: AsyncSession, request: Request, response: Response, post: serializers.PostCreate
 ):
     user_id = (await get_current_user(db=db, request=request, response=response)).id
 
@@ -97,13 +103,13 @@ async def create_post_view(
 
 
 async def edit_post_view(
-        post_id: int,
-        request: Request,
-        response: Response,
-        db: AsyncSession,
-        topic: str = None,
-        content: str = None,
-        tags: str = None,
+    post_id: int,
+    request: Request,
+    response: Response,
+    db: AsyncSession,
+    topic: str = None,
+    content: str = None,
+    tags: str = None,
 ):
     user_id = (await get_current_user(request=request, db=db, response=response)).id
     result = await db.execute(select(models.DBPost).filter(models.DBPost.id == post_id))
@@ -132,7 +138,7 @@ async def edit_post_view(
 
 
 async def delete_post_view(
-        db: AsyncSession, post_id: int, request: Request, response: Response
+    db: AsyncSession, post_id: int, request: Request, response: Response
 ):
     is_deleted = False
     result = await db.execute(select(models.DBPost).filter(models.DBPost.id == post_id))
@@ -152,8 +158,12 @@ async def delete_post_view(
         raise HTTPException(status_code=404, detail="No post found")
 
 
-async def like_the_post_view(post_id: int, request: Request, response: Response, db: AsyncSession):
-    current_user_id = (await get_current_user(request=request, response=response, db=db)).id
+async def like_the_post_view(
+    post_id: int, request: Request, response: Response, db: AsyncSession
+):
+    current_user_id = (
+        await get_current_user(request=request, response=response, db=db)
+    ).id
     try:
         new_like = models.DBPostLike(
             user_id=current_user_id,
@@ -165,14 +175,20 @@ async def like_the_post_view(post_id: int, request: Request, response: Response,
         return new_like
     except IntegrityError:
         await db.rollback()
-        raise HTTPException(status_code=400, detail="You already liked this post or post does not exist")
+        raise HTTPException(
+            status_code=400, detail="You already liked this post or post does not exist"
+        )
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=400, detail=str(e))
 
 
-async def unlike_the_post_view(post_id: int, request: Request, response: Response, db: AsyncSession):
-    current_user_id = (await get_current_user(request=request, response=response, db=db)).id
+async def unlike_the_post_view(
+    post_id: int, request: Request, response: Response, db: AsyncSession
+):
+    current_user_id = (
+        await get_current_user(request=request, response=response, db=db)
+    ).id
     result = await db.execute(
         select(models.DBPostLike)
         .filter(models.DBPostLike.user_id == current_user_id)
@@ -189,8 +205,7 @@ async def unlike_the_post_view(post_id: int, request: Request, response: Respons
 
 async def get_all_posts_comments_view(post_id: int, db: AsyncSession):
     results = await db.execute(
-        select(models.DBComment)
-        .filter(models.DBComment.post_id == post_id)
+        select(models.DBComment).filter(models.DBComment.post_id == post_id)
     )
     comments = results.scalars().all()
     return comments

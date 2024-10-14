@@ -94,22 +94,23 @@ async def fetch(url, cookies):
 
 
 @app.websocket("/ws/{post_id}")
-async def websocket_endpoint(websocket: WebSocket, post_id: int, db: AsyncSession = Depends(get_db)):
+async def websocket_endpoint(
+    websocket: WebSocket, post_id: int, db: AsyncSession = Depends(get_db)
+):
     await manager.connect(websocket, post_id)
     user_email = None
     while True:
         try:
             access_token = websocket.cookies.get("access_token")
             user_data = jwt.decode(
-                access_token.encode('utf-8'),
+                access_token.encode("utf-8"),
                 os.getenv("SECRET_KEY"),
-                algorithms=[os.getenv("ALGORITHM")]
+                algorithms=[os.getenv("ALGORITHM")],
             )
             user_email = user_data.get("sub")
 
             current_user_payload = await db.execute(
-                select(models.DBUser)
-                .filter(models.DBUser.email == user_email)
+                select(models.DBUser).filter(models.DBUser.email == user_email)
             )
             current_user = current_user_payload.scalar()
 
@@ -143,7 +144,9 @@ async def websocket_endpoint(websocket: WebSocket, post_id: int, db: AsyncSessio
 
         except jwt.ExpiredSignatureError:
             url = "http://localhost:8000/api/is-authenticated/"
-            response = await fetch(url, websocket.cookies)  # giving the cookies what we have at the moment.
+            response = await fetch(
+                url, websocket.cookies
+            )  # giving the cookies what we have at the moment.
             set_cookie_header = response.headers.get("Set-Cookie")
 
             match = re.search(r"access_token=([^;]+)", set_cookie_header)
@@ -151,7 +154,9 @@ async def websocket_endpoint(websocket: WebSocket, post_id: int, db: AsyncSessio
                 access_token_value = match.group(1)
                 websocket.cookies["access_token"] = access_token_value
             else:
-                await websocket.send_text("Failed to refresh access token. Please log in again.")
+                await websocket.send_text(
+                    "Failed to refresh access token. Please log in again."
+                )
                 await websocket.close()
                 break
         except WebSocketDisconnect:
