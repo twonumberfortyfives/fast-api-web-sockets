@@ -17,7 +17,9 @@ async def get_all_posts(
     response: Response,
     db: AsyncSession = Depends(get_db),
 ) -> Page[serializers.PostList]:
-    return paginate(await views.get_all_posts_view(request=request, response=response, db=db))
+    return paginate(
+        await views.get_all_posts_view(request=request, response=response, db=db)
+    )
 
 
 @router.get("/posts/{post}")
@@ -27,7 +29,11 @@ async def retrieve_post(
     response: Response,
     db: AsyncSession = Depends(get_db),
 ) -> Page[serializers.PostList]:
-    return paginate(await views.retrieve_post_view(post=post, request=request, response=response, db=db))
+    return paginate(
+        await views.retrieve_post_view(
+            post=post, request=request, response=response, db=db
+        )
+    )
 
 
 @router.post("/posts/{post_id}/like/", response_model=serializers.Like)

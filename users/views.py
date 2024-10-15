@@ -131,8 +131,12 @@ async def my_profile_view(request: Request, response: Response, db: AsyncSession
     return await get_current_user(request=request, response=response, db=db)
 
 
-async def retrieve_users_posts_view(user_id: int, request: Request, response: Response, db: AsyncSession):
-    current_user_id = (await get_current_user(request=request, response=response, db=db)).id
+async def retrieve_users_posts_view(
+    user_id: int, request: Request, response: Response, db: AsyncSession
+):
+    current_user_id = (
+        await get_current_user(request=request, response=response, db=db)
+    ).id
     result = await db.execute(
         select(models.DBPost)
         .outerjoin(models.DBUser, models.DBPost.user_id == models.DBUser.id)
@@ -158,7 +162,7 @@ async def retrieve_users_posts_view(user_id: int, request: Request, response: Re
                 user=post.user,
                 likes_count=len(post.likes),
                 comments_count=len(post.comments),
-                is_liked=any(like.user_id == current_user_id for like in post.likes)
+                is_liked=any(like.user_id == current_user_id for like in post.likes),
             )
             for post in users_posts
         ]

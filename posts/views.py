@@ -24,13 +24,9 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 async def get_all_posts_view(request: Request, response: Response, db: AsyncSession):
     result = await db.execute(
         select(models.DBPost)
-        .outerjoin(
-            models.DBUser, models.DBPost.user_id == models.DBUser.id
-        )
+        .outerjoin(models.DBUser, models.DBPost.user_id == models.DBUser.id)
         .options(selectinload(models.DBPost.user))
-        .outerjoin(
-            models.DBPostLike, models.DBPost.id == models.DBPostLike.post_id
-        )
+        .outerjoin(models.DBPostLike, models.DBPost.id == models.DBPostLike.post_id)
         .options(selectinload(models.DBPost.likes))
         .outerjoin(
             models.DBComment, models.DBPost.id == models.DBComment.post_id
@@ -53,7 +49,8 @@ async def get_all_posts_view(request: Request, response: Response, db: AsyncSess
             user=post.user,
             likes_count=len(post.likes),
             comments_count=len(post.comments),
-            is_liked=any(like.user_id == user_id for like in post.likes))
+            is_liked=any(like.user_id == user_id for like in post.likes),
+        )
         for post in posts
     ]
 
@@ -62,8 +59,12 @@ async def get_all_posts_view(request: Request, response: Response, db: AsyncSess
     raise HTTPException(status_code=404, detail="No posts found")
 
 
-async def retrieve_post_view(post, request: Request, response: Response, db: AsyncSession):
-    current_user_id = (await get_current_user(request=request, response=response, db=db)).id
+async def retrieve_post_view(
+    post, request: Request, response: Response, db: AsyncSession
+):
+    current_user_id = (
+        await get_current_user(request=request, response=response, db=db)
+    ).id
     if post.isdigit():
         post = int(post)
         result = await db.execute(
@@ -90,7 +91,10 @@ async def retrieve_post_view(post, request: Request, response: Response, db: Asy
                     user=post.user,
                     likes_count=len(post.likes),
                     comments_count=len(post.comments),
-                    is_liked=any(like.user_id == current_user_id for like in post.likes))
+                    is_liked=any(
+                        like.user_id == current_user_id for like in post.likes
+                    ),
+                )
             ]
             return posts_with_is_liked
 
@@ -119,7 +123,8 @@ async def retrieve_post_view(post, request: Request, response: Response, db: Asy
                     user=p.user,
                     likes_count=len(p.likes),
                     comments_count=len(p.comments),
-                    is_liked=any(like.user_id == current_user_id for like in p.likes))
+                    is_liked=any(like.user_id == current_user_id for like in p.likes),
+                )
                 for p in post
             ]
             return posts_with_is_liked
