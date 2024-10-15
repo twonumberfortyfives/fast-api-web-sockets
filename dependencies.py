@@ -10,6 +10,7 @@ from db.engine import async_session
 from sqlalchemy.future import select
 from db import models
 from db.models import Role
+from posts.serializers import PostList
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
@@ -120,3 +121,20 @@ def require_role(required_role: Role):
         return current_user
 
     return role_checker
+
+
+async def get_posts_with_full_info(posts, current_user_id: int):
+    return [
+        PostList(
+            id=post.id,
+            topic=post.topic,
+            content=post.content,
+            tags=post.tags,
+            created_at=post.created_at,
+            user=post.user,
+            likes_count=len(post.likes),
+            comments_count=len(post.comments),
+            is_liked=any(like.user_id == current_user_id for like in post.likes),
+        )
+        for post in posts
+    ]

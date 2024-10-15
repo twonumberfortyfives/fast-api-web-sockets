@@ -16,6 +16,7 @@ from dependencies import (
     create_access_token,
     create_refresh_token,
     ACCESS_TOKEN_EXPIRE_TIME_MINUTES,
+    get_posts_with_full_info,
 )
 from users import serializers
 from posts.serializers import PostList
@@ -149,25 +150,13 @@ async def retrieve_users_posts_view(
         .distinct()
         .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
     )
-    users_posts = result.scalars().all()
+    posts = result.scalars().all()
 
-    if users_posts:
-        users_posts_with_is_liked = [
-            PostList(
-                id=post.id,
-                topic=post.topic,
-                content=post.content,
-                tags=post.tags,
-                created_at=post.created_at,
-                user=post.user,
-                likes_count=len(post.likes),
-                comments_count=len(post.comments),
-                is_liked=any(like.user_id == current_user_id for like in post.likes),
-            )
-            for post in users_posts
-        ]
-
-        return users_posts_with_is_liked
+    if posts:
+        posts_with_full_info = await get_posts_with_full_info(
+            posts=posts, current_user_id=current_user_id
+        )
+        return posts_with_full_info
     raise HTTPException(status_code=400, detail="No posts found")
 
 

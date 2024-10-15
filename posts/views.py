@@ -10,7 +10,7 @@ from sqlalchemy.orm import selectinload
 
 from db import models
 from posts import serializers
-from dependencies import get_current_user
+from dependencies import get_current_user, get_posts_with_full_info
 
 load_dotenv()
 
@@ -37,25 +37,16 @@ async def get_all_posts_view(request: Request, response: Response, db: AsyncSess
     )
     posts = result.scalars().all()
 
-    user_id = (await get_current_user(request=request, response=response, db=db)).id
+    current_user_id = (
+        await get_current_user(request=request, response=response, db=db)
+    ).id
 
-    posts_with_is_liked = [
-        serializers.PostList(
-            id=post.id,
-            topic=post.topic,
-            content=post.content,
-            tags=post.tags,
-            created_at=post.created_at,
-            user=post.user,
-            likes_count=len(post.likes),
-            comments_count=len(post.comments),
-            is_liked=any(like.user_id == user_id for like in post.likes),
-        )
-        for post in posts
-    ]
+    posts_with_full_info = await get_posts_with_full_info(
+        posts=posts, current_user_id=current_user_id
+    )
 
-    if posts_with_is_liked:
-        return posts_with_is_liked
+    if posts_with_full_info:
+        return posts_with_full_info
     raise HTTPException(status_code=404, detail="No posts found")
 
 
@@ -79,24 +70,12 @@ async def retrieve_post_view(
             .distinct()
             .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
         )
-        post = result.scalars().first()
+        posts = result.scalars().all()
         if post:
-            posts_with_is_liked = [
-                serializers.PostList(
-                    id=post.id,
-                    topic=post.topic,
-                    content=post.content,
-                    tags=post.tags,
-                    created_at=post.created_at,
-                    user=post.user,
-                    likes_count=len(post.likes),
-                    comments_count=len(post.comments),
-                    is_liked=any(
-                        like.user_id == current_user_id for like in post.likes
-                    ),
-                )
-            ]
-            return posts_with_is_liked
+            posts_with_full_info = await get_posts_with_full_info(
+                posts=posts, current_user_id=current_user_id
+            )
+            return posts_with_full_info
 
     if isinstance(post, str):
         result = await db.execute(
@@ -111,23 +90,12 @@ async def retrieve_post_view(
             .distinct()
             .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
         )
-        post = result.scalars().all()
+        posts = result.scalars().all()
         if post:
-            posts_with_is_liked = [
-                serializers.PostList(
-                    id=p.id,
-                    topic=p.topic,
-                    content=p.content,
-                    tags=p.tags,
-                    created_at=p.created_at,
-                    user=p.user,
-                    likes_count=len(p.likes),
-                    comments_count=len(p.comments),
-                    is_liked=any(like.user_id == current_user_id for like in p.likes),
-                )
-                for p in post
-            ]
-            return posts_with_is_liked
+            posts_with_full_info = await get_posts_with_full_info(
+                posts=posts, current_user_id=current_user_id
+            )
+            return posts_with_full_info
     raise HTTPException(status_code=404, detail="No post found")
 
 
