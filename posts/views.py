@@ -1,4 +1,7 @@
-from fastapi import HTTPException, Request, Response
+import uuid
+from typing import Optional
+
+from fastapi import HTTPException, Request, Response, UploadFile, File
 from passlib.context import CryptContext
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,7 +12,7 @@ import os
 from sqlalchemy.orm import selectinload
 
 from db import models
-from posts import serializers
+import aiofiles
 from dependencies import get_current_user, get_posts_with_full_info
 
 load_dotenv()
@@ -37,25 +40,24 @@ async def get_all_posts_view(request: Request, response: Response, db: AsyncSess
     )
     posts = result.scalars().all()
 
-    current_user_id = (
-        await get_current_user(request=request, response=response, db=db)
-    ).id
+    try:
+        current_user_id = (
+            await get_current_user(request=request, response=response, db=db)
+        ).id
 
-    posts_with_full_info = await get_posts_with_full_info(
-        posts=posts, current_user_id=current_user_id
-    )
-
-    if posts_with_full_info:
+        posts_with_full_info = await get_posts_with_full_info(
+            posts=posts, current_user_id=current_user_id
+        )
         return posts_with_full_info
+    except HTTPException as e:
+        if e.status_code == 401:
+            return posts
     raise HTTPException(status_code=404, detail="No posts found")
 
 
 async def retrieve_post_view(
     post, request: Request, response: Response, db: AsyncSession
 ):
-    current_user_id = (
-        await get_current_user(request=request, response=response, db=db)
-    ).id
     if post.isdigit():
         post = int(post)
         result = await db.execute(
@@ -71,11 +73,19 @@ async def retrieve_post_view(
             .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
         )
         posts = result.scalars().all()
-        if post:
+        try:
+            current_user_id = (
+                await get_current_user(request=request, response=response, db=db)
+            ).id
+
             posts_with_full_info = await get_posts_with_full_info(
-                posts=posts, current_user_id=current_user_id
-            )
+                    posts=posts, current_user_id=current_user_id
+                )
             return posts_with_full_info
+        except HTTPException as e:
+            if e.status_code == 401:
+                return posts
+        raise HTTPException(status_code=404, detail="No posts found")
 
     if isinstance(post, str):
         result = await db.execute(
@@ -91,28 +101,79 @@ async def retrieve_post_view(
             .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
         )
         posts = result.scalars().all()
-        if post:
+        try:
+            current_user_id = (
+                await get_current_user(request=request, response=response, db=db)
+            ).id
             posts_with_full_info = await get_posts_with_full_info(
                 posts=posts, current_user_id=current_user_id
             )
             return posts_with_full_info
+        except HTTPException as e:
+            if e.status_code == 401:
+                return posts
+        raise HTTPException(status_code=404, detail="No post found")
     raise HTTPException(status_code=404, detail="No post found")
 
 
 async def create_post_view(
-    db: AsyncSession, request: Request, response: Response, post: serializers.PostCreate
+    db: AsyncSession,
+    request: Request,
+    response: Response,
+    files: list[UploadFile],
+    topic: str,
+    content: str,
+    tags: Optional[str] = None,
 ):
     user_id = (await get_current_user(db=db, request=request, response=response)).id
 
+    if not topic or not topic.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Topic cannot be empty or contain only spaces."
+        )
+
+    if not content or not content.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Content cannot be empty or contain only spaces."
+        )
+
+    if tags is not None and not tags.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Tags cannot be empty or contain only spaces."
+        )
+
+    list_of_files_paths = []
+    print(files)
+    if files and files != ["string"] and files != "":
+        supported_types = ["image/png", "image/jpeg"]
+        if any(file.content_type not in supported_types for file in files):
+            raise HTTPException(status_code=400, detail="Picture type not supported")
+
+        os.makedirs("uploads", exist_ok=True)
+        for file in files:
+            image_path = f"uploads/{user_id}_{uuid.uuid4()}_{file.filename}"
+
+            async with aiofiles.open(image_path, "wb") as f:
+                await f.write(await file.read())
+
+            base_url = f"{request.url.scheme}://{request.url.netloc}/"
+            list_of_files_paths.append(f"{base_url}{image_path}")
+
     new_post = models.DBPost(
-        topic=post.topic,
-        content=post.content,
+        topic=topic,
+        content=content,
         user_id=user_id,
-        tags=post.tags,
+        _tags=tags,
+        files=list_of_files_paths
     )
+
     db.add(new_post)
     await db.commit()
     await db.refresh(new_post)
+
     return new_post
 
 

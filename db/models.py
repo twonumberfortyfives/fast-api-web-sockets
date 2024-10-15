@@ -69,6 +69,7 @@ class DBPost(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     topic = Column(String(255), nullable=True)
     content = Column(String(500), nullable=False)
+    files = Column(String, nullable=True)
     _tags = Column(String(500), nullable=True)
     user_id = Column(
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
@@ -88,12 +89,22 @@ class DBPost(Base):
     )
 
     @property
+    def files(self):
+        return [file.strip() for file in self.files.split(",")] if self.files else []
+
+    @files.setter
+    def files(self, files):
+        if self.files is not None:
+            self.files = ",".join(file.strip() for file in files)
+
+    @property
     def tags(self):
         return [tag.strip() for tag in self._tags.split(",")] if self._tags else []
 
     @tags.setter
     def tags(self, tags):
-        self._tags = ",".join(tag.strip() for tag in tags)
+        if tags is not None:
+            self._tags = ",".join(tag.strip() for tag in tags)
 
     @validates("topic", "content")
     def validate_topic(self, key, value):

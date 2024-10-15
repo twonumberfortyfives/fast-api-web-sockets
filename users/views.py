@@ -19,7 +19,6 @@ from dependencies import (
     get_posts_with_full_info,
 )
 from users import serializers
-from posts.serializers import PostList
 
 load_dotenv()
 
@@ -135,9 +134,6 @@ async def my_profile_view(request: Request, response: Response, db: AsyncSession
 async def retrieve_users_posts_view(
     user_id: int, request: Request, response: Response, db: AsyncSession
 ):
-    current_user_id = (
-        await get_current_user(request=request, response=response, db=db)
-    ).id
     result = await db.execute(
         select(models.DBPost)
         .outerjoin(models.DBUser, models.DBPost.user_id == models.DBUser.id)
@@ -151,13 +147,18 @@ async def retrieve_users_posts_view(
         .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
     )
     posts = result.scalars().all()
-
-    if posts:
+    try:
+        current_user_id = (
+            await get_current_user(request=request, response=response, db=db)
+        ).id
         posts_with_full_info = await get_posts_with_full_info(
             posts=posts, current_user_id=current_user_id
         )
         return posts_with_full_info
-    raise HTTPException(status_code=400, detail="No posts found")
+    except HTTPException as e:
+        if e.status_code == 401:
+            return posts
+        raise HTTPException(status_code=400, detail="No posts found")
 
 
 async def my_profile_edit_view(

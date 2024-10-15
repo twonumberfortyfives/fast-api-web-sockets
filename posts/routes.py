@@ -1,6 +1,6 @@
 from typing import Union
 
-from fastapi import Depends, Request, APIRouter, Response
+from fastapi import Depends, Request, APIRouter, Response, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from dependencies import get_db
@@ -64,11 +64,14 @@ async def unlike_the_post(
 async def create_post(
     request: Request,
     response: Response,
-    post: serializers.PostCreate,
+    files: list[UploadFile] | list[str],
+    topic: str = None,
+    content: str = None,
+    tags: str = None,
     db: AsyncSession = Depends(get_db),
 ):
     return await views.create_post_view(
-        db=db, request=request, post=post, response=response
+        db=db, request=request, topic=topic, content=content, tags=tags, files=files, response=response
     )
 
 
