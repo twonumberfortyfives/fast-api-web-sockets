@@ -78,7 +78,7 @@ class ConnectionManager:
     async def broadcast(self, message: str, group_name: int):
         if group_name in self.active_connections:
             for connection in self.active_connections[group_name]:
-                await connection.send_json(message)
+                await connection.send_text(message)
 
 
 manager = ConnectionManager()
