@@ -57,7 +57,6 @@ class UserMyProfile(BaseModel):
     profile_picture: str
     username: str
     bio: str | None
-    posts: list[Post]
 
     class Config:
         from_attributes = True

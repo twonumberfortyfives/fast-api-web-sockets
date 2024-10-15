@@ -42,9 +42,11 @@ async def retrieve_user(user, db: AsyncSession = Depends(get_db)):
 @router.get("/users/{user_id}/posts/")
 async def retrieve_users_posts(
     user_id: int,
+    request: Request,
+    response: Response,
     db: AsyncSession = Depends(get_db),
 ) -> Page[PostList]:
-    return paginate(await views.retrieve_users_posts_view(user_id=user_id, db=db))
+    return paginate(await views.retrieve_users_posts_view(user_id=user_id, request=request, response=response, db=db))
 
 
 @router.get("/my-profile", response_model=serializers.UserMyProfile)

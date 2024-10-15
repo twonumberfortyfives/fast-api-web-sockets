@@ -18,6 +18,7 @@ from dependencies import (
     ACCESS_TOKEN_EXPIRE_TIME_MINUTES,
 )
 from users import serializers
+from posts.serializers import PostList
 
 load_dotenv()
 
@@ -130,12 +131,13 @@ async def my_profile_view(request: Request, response: Response, db: AsyncSession
     return await get_current_user(request=request, response=response, db=db)
 
 
-async def retrieve_users_posts_view(user_id: int, db: AsyncSession):
+async def retrieve_users_posts_view(user_id: int, request: Request, response: Response, db: AsyncSession):
+    current_user_id = (await get_current_user(request=request, response=response, db=db)).id
     result = await db.execute(
         select(models.DBPost)
-        .outerjoin(models.DBUser)
+        .outerjoin(models.DBUser, models.DBPost.user_id == models.DBUser.id)
         .options(selectinload(models.DBPost.user))
-        .outerjoin(models.DBPostLike)
+        .outerjoin(models.DBPostLike, models.DBPost.id == models.DBPostLike.post_id)
         .options(selectinload(models.DBPost.likes))
         .outerjoin(models.DBComment, models.DBComment.post_id == models.DBPost.id)
         .options(selectinload(models.DBPost.comments))
@@ -144,7 +146,25 @@ async def retrieve_users_posts_view(user_id: int, db: AsyncSession):
         .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
     )
     users_posts = result.scalars().all()
-    return users_posts
+
+    if users_posts:
+        users_posts_with_is_liked = [
+            PostList(
+                id=post.id,
+                topic=post.topic,
+                content=post.content,
+                tags=post.tags,
+                created_at=post.created_at,
+                user=post.user,
+                likes_count=len(post.likes),
+                comments_count=len(post.comments),
+                is_liked=any(like.user_id == current_user_id for like in post.likes)
+            )
+            for post in users_posts
+        ]
+
+        return users_posts_with_is_liked
+    raise HTTPException(status_code=400, detail="No posts found")
 
 
 async def my_profile_edit_view(

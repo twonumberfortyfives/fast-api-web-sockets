@@ -56,11 +56,11 @@ class PostList(BaseModel):
             .replace("+00:00", "Z")
         }
 
-    @model_validator(mode="before")
-    def count_all_likes_and_comments(cls, values):
-        values.likes_count = len(values.likes)
-        values.comments_count = len(values.comments)
-        return values
+    # @model_validator(mode="before")
+    # def count_all_likes_and_comments(cls, values):
+    #     values.likes_count = len(values.likes)
+    #     values.comments_count = len(values.comments)
+    #     return values
 
 
 class PostCreate(BaseModel):

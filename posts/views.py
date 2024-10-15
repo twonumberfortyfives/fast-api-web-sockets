@@ -21,32 +21,49 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
-async def get_all_posts_view(db: AsyncSession):
+async def get_all_posts_view(request: Request, response: Response, db: AsyncSession):
     result = await db.execute(
         select(models.DBPost)
         .outerjoin(
             models.DBUser, models.DBPost.user_id == models.DBUser.id
-        )  # mapped manually.
+        )
         .options(selectinload(models.DBPost.user))
         .outerjoin(
             models.DBPostLike, models.DBPost.id == models.DBPostLike.post_id
-        )  # mapped manually.
+        )
         .options(selectinload(models.DBPost.likes))
         .outerjoin(
             models.DBComment, models.DBPost.id == models.DBComment.post_id
-        )  # mapped manually.
+        )  # manually mapped.
         .options(selectinload(models.DBPost.comments))
         .distinct()
         .order_by(models.DBPost.id.desc())
     )
     posts = result.scalars().all()
-    if posts:
-        return posts
 
+    user_id = (await get_current_user(request=request, response=response, db=db)).id
+
+    posts_with_is_liked = [
+        serializers.PostList(
+            id=post.id,
+            topic=post.topic,
+            content=post.content,
+            tags=post.tags,
+            created_at=post.created_at,
+            user=post.user,
+            likes_count=len(post.likes),
+            comments_count=len(post.comments),
+            is_liked=any(like.user_id == user_id for like in post.likes))
+        for post in posts
+    ]
+
+    if posts_with_is_liked:
+        return posts_with_is_liked
     raise HTTPException(status_code=404, detail="No posts found")
 
 
-async def retrieve_post_view(post, db: AsyncSession):
+async def retrieve_post_view(post, request: Request, response: Response, db: AsyncSession):
+    current_user_id = (await get_current_user(request=request, response=response, db=db)).id
     if post.isdigit():
         post = int(post)
         result = await db.execute(
@@ -63,7 +80,19 @@ async def retrieve_post_view(post, db: AsyncSession):
         )
         post = result.scalars().first()
         if post:
-            return [post]
+            posts_with_is_liked = [
+                serializers.PostList(
+                    id=post.id,
+                    topic=post.topic,
+                    content=post.content,
+                    tags=post.tags,
+                    created_at=post.created_at,
+                    user=post.user,
+                    likes_count=len(post.likes),
+                    comments_count=len(post.comments),
+                    is_liked=any(like.user_id == current_user_id for like in post.likes))
+            ]
+            return posts_with_is_liked
 
     if isinstance(post, str):
         result = await db.execute(
@@ -79,10 +108,22 @@ async def retrieve_post_view(post, db: AsyncSession):
             .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
         )
         post = result.scalars().all()
-    if post:
-        return post
-    else:
-        raise HTTPException(status_code=404, detail="No post found")
+        if post:
+            posts_with_is_liked = [
+                serializers.PostList(
+                    id=p.id,
+                    topic=p.topic,
+                    content=p.content,
+                    tags=p.tags,
+                    created_at=p.created_at,
+                    user=p.user,
+                    likes_count=len(p.likes),
+                    comments_count=len(p.comments),
+                    is_liked=any(like.user_id == current_user_id for like in p.likes))
+                for p in post
+            ]
+            return posts_with_is_liked
+    raise HTTPException(status_code=404, detail="No post found")
 
 
 async def create_post_view(
