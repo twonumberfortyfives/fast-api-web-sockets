@@ -31,9 +31,7 @@ async def get_all_posts_view(request: Request, response: Response, db: AsyncSess
         .options(selectinload(models.DBPost.user))
         .outerjoin(models.DBPostLike, models.DBPost.id == models.DBPostLike.post_id)
         .options(selectinload(models.DBPost.likes))
-        .outerjoin(
-            models.DBComment, models.DBPost.id == models.DBComment.post_id
-        )  # manually mapped.
+        .outerjoin(models.DBComment, models.DBPost.id == models.DBComment.post_id)
         .options(selectinload(models.DBPost.comments))
         .outerjoin(models.DBFile, models.DBPost.id == models.DBFile.post_id)
         .options(selectinload(models.DBPost.files))
@@ -53,20 +51,7 @@ async def get_all_posts_view(request: Request, response: Response, db: AsyncSess
         return posts_with_full_info
     except HTTPException as e:
         if e.status_code == 401:
-            return [
-                {
-                    "id": post.id,
-                    "topic": post.topic,
-                    "content": post.content,
-                    "tags": post.tags,
-                    "created_at": post.created_at,
-                    "user": post.user,
-                    "likes_count": len(post.likes),
-                    "comments_count": len(post.comments),
-                    "files": post.files,
-                }
-                for post in posts
-            ]
+            return posts
     raise HTTPException(status_code=404, detail="No posts found")
 
 

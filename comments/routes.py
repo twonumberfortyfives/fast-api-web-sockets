@@ -10,7 +10,7 @@ from comments import serializers
 router = APIRouter()
 
 
-@router.get("/api/posts/{post_id}/all-comments/")
+@router.get("/posts/{post_id}/all-comments/")
 async def get_comments(
     post_id: int, db: AsyncSession = Depends(get_db)
 ) -> Page[serializers.CommentList]:
