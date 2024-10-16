@@ -142,6 +142,8 @@ async def retrieve_users_posts_view(
         .options(selectinload(models.DBPost.likes))
         .outerjoin(models.DBComment, models.DBComment.post_id == models.DBPost.id)
         .options(selectinload(models.DBPost.comments))
+        .outerjoin(models.DBFile, models.DBPost.id == models.DBFile.post_id)
+        .options(selectinload(models.DBPost.files))
         .filter(models.DBPost.user_id == user_id)
         .distinct()
         .order_by(models.DBPost.id.desc())  # Sort by ID in descending order

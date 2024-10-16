@@ -135,7 +135,8 @@ async def get_posts_with_full_info(posts, current_user_id: int):
             "likes_count": len(post.likes),
             "comments_count": len(post.comments),
             "is_liked": any(like.user_id == current_user_id for like in post.likes),
-            "files": post.files
+            # "files": [file for file in post.files if file] if post.files is not None else []
+            "files": post.files,
         }
         for post in posts
     ]

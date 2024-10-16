@@ -22,6 +22,15 @@ class Role(PyEnum):
     user = "user"
 
 
+class DBFile(Base):
+    __tablename__ = 'files'
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    link = Column(String)
+    post_id = Column(Integer, ForeignKey('posts.id', ondelete='CASCADE'), nullable=False)
+
+    post = relationship("DBPost", back_populates="files")
+
+
 class DBUser(Base):
     __tablename__ = "users"
 
@@ -71,7 +80,7 @@ class DBPost(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     topic = Column(String(255), nullable=True)
     content = Column(String(500), nullable=False)
-    files = Column(ARRAY(String), nullable=True)
+    files = relationship("DBFile", back_populates="post", cascade="all, delete-orphan")  # Relationship to files
     _tags = Column(String(500), nullable=True)
     user_id = Column(
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False

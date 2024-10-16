@@ -1,7 +1,13 @@
 from typing import Optional, List
 
-from pydantic import BaseModel, Field, EmailStr, field_validator, model_validator
+from pydantic import BaseModel, Field, EmailStr, field_validator, HttpUrl
 from datetime import datetime, timezone
+
+
+class Files(BaseModel):
+    id: int
+    link: str
+    post_id: int
 
 
 class Post(BaseModel):
@@ -11,13 +17,12 @@ class Post(BaseModel):
     tags: list[str]
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     user_id: int
+    files: list[Files]
 
     class Config:
         from_attributes = True
         json_encoders = {
-            datetime: lambda v: v.astimezone(timezone.utc)
-            .isoformat()
-            .replace("+00:00", "Z")
+            datetime: lambda v: v.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
         }
 
 
@@ -47,7 +52,7 @@ class PostList(BaseModel):
     likes_count: int = 0  # Add a field for counting likes
     comments_count: int = 0
     is_liked: bool = False
-    files: tuple[str] = []
+    files: list[Files] = []  # List of file URLs or names
 
     class Config:
         from_attributes = True

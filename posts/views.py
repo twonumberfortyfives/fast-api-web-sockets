@@ -35,6 +35,8 @@ async def get_all_posts_view(request: Request, response: Response, db: AsyncSess
             models.DBComment, models.DBPost.id == models.DBComment.post_id
         )  # manually mapped.
         .options(selectinload(models.DBPost.comments))
+        .outerjoin(models.DBFile, models.DBPost.id == models.DBFile.post_id)
+        .options(selectinload(models.DBPost.files))
         .distinct()
         .order_by(models.DBPost.id.desc())
     )
@@ -51,7 +53,20 @@ async def get_all_posts_view(request: Request, response: Response, db: AsyncSess
         return posts_with_full_info
     except HTTPException as e:
         if e.status_code == 401:
-            return posts
+            return [
+                {
+                    "id": post.id,
+                    "topic": post.topic,
+                    "content": post.content,
+                    "tags": post.tags,
+                    "created_at": post.created_at,
+                    "user": post.user,
+                    "likes_count": len(post.likes),
+                    "comments_count": len(post.comments),
+                    "files": post.files,
+                }
+                for post in posts
+            ]
     raise HTTPException(status_code=404, detail="No posts found")
 
 
@@ -68,6 +83,8 @@ async def retrieve_post_view(
             .options(selectinload(models.DBPost.likes))
             .outerjoin(models.DBComment, models.DBPost.id == models.DBComment.post_id)
             .options(selectinload(models.DBPost.comments))
+            .outerjoin(models.DBFile, models.DBPost.id == models.DBFile.post_id)
+            .options(selectinload(models.DBPost.files))
             .filter(models.DBPost.id == post)
             .distinct()
             .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
@@ -96,6 +113,8 @@ async def retrieve_post_view(
             .options(selectinload(models.DBPost.likes))
             .outerjoin(models.DBComment, models.DBPost.id == models.DBComment.post_id)
             .options(selectinload(models.DBPost.comments))
+            .outerjoin(models.DBFile, models.DBPost.id == models.DBFile.post_id)
+            .options(selectinload(models.DBPost.files))
             .filter(models.DBPost.topic.ilike(f"%{post}%"))
             .distinct()
             .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
@@ -120,68 +139,69 @@ async def create_post_view(
     db: AsyncSession,
     request: Request,
     response: Response,
-    files: list[UploadFile],
+    files: list[UploadFile] | None,
     topic: str,
     content: str,
     tags: Optional[str] = None,
 ):
+    # Get the current user's ID
     user_id = (await get_current_user(db=db, request=request, response=response)).id
 
+    # Validate input fields
     if not topic or not topic.strip():
-        raise HTTPException(
-            status_code=400,
-            detail="Topic cannot be empty or contain only spaces."
-        )
+        raise HTTPException(status_code=400, detail="Topic cannot be empty or contain only spaces.")
 
     if not content or not content.strip():
-        raise HTTPException(
-            status_code=400,
-            detail="Content cannot be empty or contain only spaces."
-        )
+        raise HTTPException(status_code=400, detail="Content cannot be empty or contain only spaces.")
 
     if tags is not None and not tags.strip():
-        raise HTTPException(
-            status_code=400,
-            detail="Tags cannot be empty or contain only spaces."
-        )
-
-    list_of_files_paths = []
-    if files and files != ["string"] and files != "":
-        supported_types = ["image/png", "image/jpeg"]
-        if any(file.content_type not in supported_types for file in files):
-            raise HTTPException(status_code=400, detail="Picture type not supported")
-
-        os.makedirs("uploads", exist_ok=True)
-        for file in files:
-            image_path = f"uploads/{user_id}_{uuid.uuid4()}_{file.filename}"
-
-            async with aiofiles.open(image_path, "wb") as f:
-                await f.write(await file.read())
-
-            base_url = f"{request.url.scheme}://{request.url.netloc}/"
-            list_of_files_paths.append(f"{base_url}{image_path}")
+        raise HTTPException(status_code=400, detail="Tags cannot be empty or contain only spaces.")
 
     new_post = models.DBPost(
         topic=topic,
         content=content,
         user_id=user_id,
         _tags=tags,
-        files=list_of_files_paths,
     )
 
     db.add(new_post)
     await db.commit()
     await db.refresh(new_post)
 
-    return {
-        "id": new_post.id,
-        "topic": new_post.topic,
-        "content": new_post.content,
-        "tags": new_post.tags,
-        "created_at": new_post.created_at,
-        "user_id": new_post.user_id,
-        "files": list_of_files_paths,
-    }
+    # Process uploaded files
+    list_of_file_records = []
+    if files and files != ["string"] and files != [""]:
+        supported_types = ["image/png", "image/jpeg"]
+        if any(file.content_type not in supported_types for file in files):
+            raise HTTPException(status_code=400, detail="Picture type not supported.")
+
+        os.makedirs("uploads", exist_ok=True)
+
+        for file in files:
+            image_path = f"uploads/{user_id}_{uuid.uuid4()}_{file.filename}"
+            async with aiofiles.open(image_path, "wb") as f:
+                await f.write(await file.read())
+
+            file_record = models.DBFile(link=f"http://127.0.0.1:8000/{image_path}", post_id=new_post.id)
+            db.add(file_record)
+            list_of_file_records.append(file_record)
+
+        await db.commit()  # Refresh to get any new data
+
+    query = (
+        select(models.DBPost)
+        .outerjoin(models.DBComment, models.DBPost.id == models.DBComment.post_id)
+        .options(selectinload(models.DBPost.comments))
+        .outerjoin(models.DBPostLike, models.DBPost.id == models.DBPostLike.post_id)
+        .options(selectinload(models.DBPost.likes))
+        .outerjoin(models.DBFile, models.DBPost.id == models.DBFile.post_id)
+        .options(selectinload(models.DBPost.files))  # Ensure files are loaded
+        .distinct()
+        .where(models.DBPost.id == new_post.id)
+    )
+
+    result = await db.execute(query)
+    return result.scalars().first()
 
 
 async def edit_post_view(
