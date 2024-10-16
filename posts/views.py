@@ -146,7 +146,6 @@ async def create_post_view(
         )
 
     list_of_files_paths = []
-    print(files)
     if files and files != ["string"] and files != "":
         supported_types = ["image/png", "image/jpeg"]
         if any(file.content_type not in supported_types for file in files):
@@ -167,14 +166,22 @@ async def create_post_view(
         content=content,
         user_id=user_id,
         _tags=tags,
-        files=list_of_files_paths
+        files=list_of_files_paths,
     )
 
     db.add(new_post)
     await db.commit()
     await db.refresh(new_post)
 
-    return new_post
+    return {
+        "id": new_post.id,
+        "topic": new_post.topic,
+        "content": new_post.content,
+        "tags": new_post.tags,
+        "created_at": new_post.created_at,
+        "user_id": new_post.user_id,
+        "files": list_of_files_paths,
+    }
 
 
 async def edit_post_view(

@@ -8,6 +8,8 @@ from sqlalchemy import (
     func,
     UniqueConstraint,
     Index,
+    ARRAY
+
 )
 from sqlalchemy.orm import relationship, validates
 from db.engine import Base
@@ -69,7 +71,7 @@ class DBPost(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     topic = Column(String(255), nullable=True)
     content = Column(String(500), nullable=False)
-    files = Column(String, nullable=True)
+    files = Column(ARRAY(String), nullable=True)
     _tags = Column(String(500), nullable=True)
     user_id = Column(
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
@@ -87,15 +89,6 @@ class DBPost(Base):
         back_populates="post",
         cascade="all, delete-orphan",
     )
-
-    @property
-    def files(self):
-        return [file.strip() for file in self.files.split(",")] if self.files else []
-
-    @files.setter
-    def files(self, files):
-        if self.files is not None:
-            self.files = ",".join(file.strip() for file in files)
 
     @property
     def tags(self):

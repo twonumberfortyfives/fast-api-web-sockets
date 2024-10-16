@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import BaseModel, Field, EmailStr, field_validator, model_validator
 from datetime import datetime, timezone
@@ -47,6 +47,7 @@ class PostList(BaseModel):
     likes_count: int = 0  # Add a field for counting likes
     comments_count: int = 0
     is_liked: bool = False
+    files: tuple[str] = []
 
     class Config:
         from_attributes = True

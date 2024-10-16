@@ -125,16 +125,17 @@ def require_role(required_role: Role):
 
 async def get_posts_with_full_info(posts, current_user_id: int):
     return [
-        PostList(
-            id=post.id,
-            topic=post.topic,
-            content=post.content,
-            tags=post.tags,
-            created_at=post.created_at,
-            user=post.user,
-            likes_count=len(post.likes),
-            comments_count=len(post.comments),
-            is_liked=any(like.user_id == current_user_id for like in post.likes),
-        )
+        {
+            "id": post.id,
+            "topic": post.topic,
+            "content": post.content,
+            "tags": post.tags,
+            "created_at": post.created_at,
+            "user": post.user,
+            "likes_count": len(post.likes),
+            "comments_count": len(post.comments),
+            "is_liked": any(like.user_id == current_user_id for like in post.likes),
+            "files": post.files
+        }
         for post in posts
     ]

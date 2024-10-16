@@ -60,7 +60,7 @@ async def unlike_the_post(
     )
 
 
-@router.post("/posts", response_model=serializers.Post)
+@router.post("/posts")
 async def create_post(
     request: Request,
     response: Response,
