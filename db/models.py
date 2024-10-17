@@ -8,8 +8,6 @@ from sqlalchemy import (
     func,
     UniqueConstraint,
     Index,
-    ARRAY
-
 )
 from sqlalchemy.orm import relationship, validates
 from db.engine import Base
@@ -47,24 +45,6 @@ class DBUser(Base):
 
     posts = relationship("DBPost", back_populates="user", cascade="all, delete-orphan")
 
-    # Specify foreign keys explicitly
-    sent_messages = relationship(
-        "DBMessage",
-        foreign_keys="[DBMessage.sender_id]",
-        back_populates="sender",
-        cascade="all, delete-orphan",
-    )
-    received_messages = relationship(
-        "DBMessage",
-        foreign_keys="[DBMessage.receiver_id]",
-        back_populates="receiver",
-        cascade="all, delete-orphan",
-    )
-
-    participants = relationship(
-        "DBChatParticipant", back_populates="user", cascade="all, delete-orphan"
-    )
-
     post_likes = relationship(
         "DBPostLike", back_populates="user", cascade="all, delete-orphan"
     )
@@ -72,6 +52,9 @@ class DBUser(Base):
     comments = relationship(
         "DBComment", back_populates="user", cascade="all, delete-orphan"
     )
+
+    # received_messages = relationship("DBMessage", foreign_keys=["DBMessage.receiver_id"], back_populates="receiver")
+    # sent_messages = relationship("DBMessage", foreign_keys=["DBMessage.sender_id"], back_populates="sender")
 
 
 class DBPost(Base):
@@ -115,48 +98,17 @@ class DBPost(Base):
         return value
 
 
-class DBChat(Base):
-    __tablename__ = "chats"
-
-    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
-    chat_id = Column(String(64), unique=True, nullable=False)
-    created_at = Column(DateTime, server_default=func.now())
-
-    participants = relationship("DBChatParticipant", back_populates="chat")
-    messages = relationship("DBMessage", back_populates="chat")
-
-
-class DBChatParticipant(Base):
-    __tablename__ = "chat_participants"
-
-    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
-    chat_id = Column(Integer, ForeignKey("chats.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    added_at = Column(DateTime, server_default=func.now())
-
-    chat = relationship("DBChat", back_populates="participants")
-    user = relationship("DBUser", back_populates="participants")
-
-
-class DBMessage(Base):
-    __tablename__ = "messages"
-
-    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
-    chat_id = Column(Integer, ForeignKey("chats.id"), nullable=False)
-    sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    receiver_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    content = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=func.now())
-
-    chat = relationship("DBChat", back_populates="messages")
-
-    # Specify foreign keys explicitly for sender and receiver
-    sender = relationship(
-        "DBUser", foreign_keys=[sender_id], back_populates="sent_messages"
-    )
-    receiver = relationship(
-        "DBUser", foreign_keys=[receiver_id], back_populates="received_messages"
-    )
+# class DBMessage(Base):
+#     __tablename__ = "messages"
+#
+#     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+#     sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+#     receiver_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+#     content = Column(String(500), nullable=False)
+#     created_at = Column(DateTime, default=func.now())
+#
+#     sender = relationship("DBUser", foreign_keys=[sender_id], back_populates="sent_messages")
+#     receiver = relationship("DBUser", foreign_keys=[receiver_id], back_populates="received_messages")
 
 
 class DBPostLike(Base):

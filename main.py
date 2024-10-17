@@ -116,7 +116,7 @@ async def websocket_endpoint(
 
             data = await websocket.receive_json()
 
-            if data != "" and not None:
+            if data:
                 try:
                     comment_serializer = CommentCreate(
                         user_id=current_user.id,
@@ -140,27 +140,36 @@ async def websocket_endpoint(
                     print(e)
                     raise HTTPException(status_code=400, detail=str(e))
 
-                await manager.broadcast(comment_serializer.json(), post_id)
+                try:
+                    await manager.broadcast(comment_serializer.json(), post_id)
+                except RuntimeError:
+                    print("Attempted to send message after WebSocket was closed.")
+                except WebSocketDisconnect:
+                    print(f"Client #{user_email} disconnected during message broadcast.")
+                    break
 
         except jwt.ExpiredSignatureError:
+            # Refresh the token logic
             url = "http://localhost:8000/api/is-authenticated/"
-            response = await fetch(
-                url, websocket.cookies
-            )  # giving the cookies what we have at the moment.
+            response = await fetch(url, websocket.cookies)
             set_cookie_header = response.headers.get("Set-Cookie")
 
-            match = re.search(r"access_token=([^;]+)", set_cookie_header)
-            if match:
-                access_token_value = match.group(1)
-                websocket.cookies["access_token"] = access_token_value
-            else:
-                await websocket.send_text(
-                    "Failed to refresh access token. Please log in again."
-                )
-                await websocket.close()
-                break
+            if set_cookie_header:
+                match = re.search(r"access_token=([^;]+)", set_cookie_header)
+                if match:
+                    access_token_value = match.group(1)
+                    websocket.cookies["access_token"] = access_token_value
+                else:
+                    await websocket.send_text("Failed to refresh access token. Please log in again.")
+                    await websocket.close()
+                    break
+        except (jwt.DecodeError, jwt.InvalidTokenError):
+            await websocket.send_text("Invalid token. Please log in again.")
+            await websocket.close()
+            break
         except WebSocketDisconnect:
             manager.disconnect(websocket, post_id)
+            print(f"User {user_email} disconnected from post {post_id}.")
             await manager.broadcast(f"Client #{user_email} left the chat", post_id)
             break
         except Exception as e:

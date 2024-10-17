@@ -10,7 +10,6 @@ from db.engine import async_session
 from sqlalchemy.future import select
 from db import models
 from db.models import Role
-from posts.serializers import PostList
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")

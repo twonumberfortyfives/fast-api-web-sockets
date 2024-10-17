@@ -29,8 +29,6 @@ async def retrieve_post(
     response: Response,
     db: AsyncSession = Depends(get_db),
 ) -> Page[serializers.PostList]:
-
-    print(request.client.host)
     return paginate(
         await views.retrieve_post_view(
             post=post, request=request, response=response, db=db
