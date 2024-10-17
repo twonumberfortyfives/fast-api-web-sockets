@@ -79,8 +79,10 @@ class PostList(BaseModel):
 
     @model_validator(mode="before")
     def count_all_likes_and_comments(cls, values):
-        values.likes_count = len(values.likes)
-        values.comments_count = len(values.comments)
+        if not isinstance(values, dict):
+            values.likes_count = len(values.likes)
+            values.comments_count = len(values.comments)
+            return values
         return values
 
 
