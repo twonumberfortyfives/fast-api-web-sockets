@@ -1,6 +1,6 @@
 from typing import Optional, List
 
-from pydantic import BaseModel, Field, EmailStr, field_validator, HttpUrl
+from pydantic import BaseModel, Field, EmailStr, field_validator, HttpUrl, model_validator
 from datetime import datetime, timezone
 
 
@@ -8,6 +8,21 @@ class Files(BaseModel):
     id: int
     link: str
     post_id: int
+
+
+class PostPatch(BaseModel):
+    id: int
+    topic: str
+    content: str
+    tags: list[str]
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    user_id: int
+
+    class Config:
+        from_attributes = True
+        json_encoders = {
+            datetime: lambda v: v.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+        }
 
 
 class Post(BaseModel):
@@ -62,11 +77,11 @@ class PostList(BaseModel):
             .replace("+00:00", "Z")
         }
 
-    # @model_validator(mode="before")
-    # def count_all_likes_and_comments(cls, values):
-    #     values.likes_count = len(values.likes)
-    #     values.comments_count = len(values.comments)
-    #     return values
+    @model_validator(mode="before")
+    def count_all_likes_and_comments(cls, values):
+        values.likes_count = len(values.likes)
+        values.comments_count = len(values.comments)
+        return values
 
 
 class PostCreate(BaseModel):

@@ -75,7 +75,7 @@ async def create_post(
     )
 
 
-@router.patch("/posts/{post_id}", response_model=serializers.Post)
+@router.patch("/posts/{post_id}", response_model=serializers.PostPatch)
 async def edit_post(
     post_id: int,
     request: Request,

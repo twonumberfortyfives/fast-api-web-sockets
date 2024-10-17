@@ -200,7 +200,7 @@ async def edit_post_view(
 ):
     user_id = (await get_current_user(request=request, db=db, response=response)).id
     result = await db.execute(select(models.DBPost).filter(models.DBPost.id == post_id))
-    post = result.scalar_one_or_none()
+    post = result.scalars().first()
 
     if post is None:
         raise HTTPException(status_code=404, detail="Post not found")
