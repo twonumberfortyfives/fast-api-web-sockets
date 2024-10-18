@@ -10,7 +10,7 @@ from sqlalchemy import (
     Index,
 )
 from sqlalchemy.orm import relationship, validates
-from db.engine import Base
+from db.engine import Base, user_chat_table
 from sqlalchemy.dialects.postgresql import ENUM
 from enum import Enum as PyEnum
 
@@ -53,8 +53,11 @@ class DBUser(Base):
         "DBComment", back_populates="user", cascade="all, delete-orphan"
     )
 
-    # received_messages = relationship("DBMessage", foreign_keys=["DBMessage.receiver_id"], back_populates="receiver")
-    # sent_messages = relationship("DBMessage", foreign_keys=["DBMessage.sender_id"], back_populates="sender")
+    messages = relationship(
+        "DBMessage", back_populates="user"
+    )
+
+    chats = relationship("DBChat", secondary=user_chat_table, back_populates='participants')
 
 
 class DBPost(Base):
@@ -98,19 +101,6 @@ class DBPost(Base):
         return value
 
 
-# class DBMessage(Base):
-#     __tablename__ = "messages"
-#
-#     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
-#     sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-#     receiver_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-#     content = Column(String(500), nullable=False)
-#     created_at = Column(DateTime, default=func.now())
-#
-#     sender = relationship("DBUser", foreign_keys=[sender_id], back_populates="sent_messages")
-#     receiver = relationship("DBUser", foreign_keys=[receiver_id], back_populates="received_messages")
-
-
 class DBPostLike(Base):
     __tablename__ = "post_likes"
 
@@ -150,3 +140,27 @@ class DBComment(Base):
         if value == "":
             raise ValueError("topic cannot be blank.")
         return value
+
+
+class DBMessage(Base):
+    __tablename__ = "messages"
+
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    chat_id = Column(Integer, ForeignKey("chats.id"), nullable=False)
+    content = Column(String(500), nullable=False)
+    created_at = Column(DateTime, default=func.now())
+
+    chat = relationship("DBChat", back_populates="messages")
+    user = relationship("DBUser", back_populates="messages")
+
+
+class DBChat(Base):
+    __tablename__ = "chats"
+
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    created_at = Column(DateTime, default=func.now())
+
+    messages = relationship("DBMessage", back_populates="chat", cascade="all, delete-orphan")
+    participants = relationship("DBUser", secondary=user_chat_table, back_populates='chats')
+

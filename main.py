@@ -26,7 +26,7 @@ from users.routes import router as users_router
 from posts.routes import router as posts_router
 from chat.routes import router as chat_router
 from comments.routes import router as comment_router
-from comments.serializers import CommentList, CommentCreate
+from comments.serializers import CommentCreate
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -59,25 +59,25 @@ async def on_startup():
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: dict[int, list[WebSocket]] = {}
+        self.active_connections: dict[str, dict[int, list[WebSocket]]] = {
+            'chat': {},
+            'post': {}
+        }
 
-    async def connect(self, websocket: WebSocket, group_name: int):
+    async def connect(self, websocket: WebSocket, group_name: int, group_type: str):
         await websocket.accept()
-        if group_name not in self.active_connections:
-            self.active_connections[group_name] = []
-        self.active_connections[group_name].append(websocket)
+        if group_name not in self.active_connections[group_type]:
+            self.active_connections[group_type][group_name] = []
+        self.active_connections[group_type][group_name].append(websocket)
 
-    def disconnect(self, websocket: WebSocket, group_name: int):
-        self.active_connections[group_name].remove(websocket)
-        if not self.active_connections[group_name]:
-            del self.active_connections[group_name]
+    def disconnect(self, websocket: WebSocket, group_name: int, group_type: str):
+        self.active_connections[group_type][group_name].remove(websocket)
+        if not self.active_connections[group_type][group_name]:
+            del self.active_connections[group_type][group_name]
 
-    async def send_personal_message(self, message: str, websocket: WebSocket):
-        await websocket.send_text(message)
-
-    async def broadcast(self, message: str, group_name: int):
-        if group_name in self.active_connections:
-            for connection in self.active_connections[group_name]:
+    async def broadcast(self, message: str, group_name: int, group_type: str):
+        if group_name in self.active_connections[group_type]:
+            for connection in self.active_connections[group_type][group_name]:
                 await connection.send_text(message)
 
 
@@ -94,10 +94,10 @@ async def fetch(url, cookies):
 
 
 @app.websocket("/ws/{post_id}")
-async def websocket_endpoint(
+async def websocket_comments(
     websocket: WebSocket, post_id: int, db: AsyncSession = Depends(get_db)
 ):
-    await manager.connect(websocket, post_id)
+    await manager.connect(websocket, post_id, "post")
     user_email = None
     while True:
         try:
@@ -141,19 +141,20 @@ async def websocket_endpoint(
                     raise HTTPException(status_code=400, detail=str(e))
 
                 try:
-                    await manager.broadcast(comment_serializer.json(), post_id)
+                    await manager.broadcast(comment_serializer.json(), post_id, "post")
                 except RuntimeError:
                     print("Attempted to send message after WebSocket was closed.")
                 except WebSocketDisconnect:
                     print(f"Client #{user_email} disconnected during message broadcast.")
                     break
 
-        except jwt.ExpiredSignatureError:
+        except (jwt.ExpiredSignatureError, jwt.exceptions.ExpiredSignatureError):
             # Refresh the token logic
             url = "http://localhost:8000/api/is-authenticated/"
             response = await fetch(url, websocket.cookies)
             set_cookie_header = response.headers.get("Set-Cookie")
 
+            print(set_cookie_header)
             if set_cookie_header:
                 match = re.search(r"access_token=([^;]+)", set_cookie_header)
                 if match:
@@ -168,9 +169,18 @@ async def websocket_endpoint(
             await websocket.close()
             break
         except WebSocketDisconnect:
-            manager.disconnect(websocket, post_id)
+            manager.disconnect(websocket, post_id, "post")
             print(f"User {user_email} disconnected from post {post_id}.")
-            await manager.broadcast(f"Client #{user_email} left the chat", post_id)
+            await manager.broadcast(f"Client #{user_email} left the chat", post_id, "post")
             break
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.websocket("/ws/{chat_id}")
+async def websocket_chat(
+        websocket: WebSocket,
+        chat_id: int,
+        db: AsyncSession = Depends(get_db),
+):
+    await manager.connect(websocket, chat_id, "chat")
