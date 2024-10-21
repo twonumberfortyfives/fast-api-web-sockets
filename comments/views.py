@@ -60,6 +60,8 @@ async def patch_comment(
     ).id
     current_comment_payload = await db.execute(
         select(models.DBComment)
+        .outerjoin(models.DBUser, models.DBComment.user_id == models.DBUser.id)
+        .options(selectinload(models.DBComment.user))
         .filter(models.DBComment.post_id == post_id)
         .filter(models.DBComment.id == comment_id)
         .filter(models.DBComment.user_id == current_user_id)
