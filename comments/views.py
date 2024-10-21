@@ -37,3 +37,22 @@ async def delete_comment(request: Request, response: Response, post_id: int, com
         await db.commit()
         return {"message": "The comment has been deleted."}
     raise HTTPException(status_code=400, detail="An error has been occurred.")
+
+
+async def patch_comment(request: Request, response: Response, post_id: int, comment_id: int, content: str, db: AsyncSession):
+    current_user_id = (await get_current_user(request=request, response=response, db=db)).id
+    current_comment_payload = await db.execute(
+        select(models.DBComment)
+        .filter(models.DBComment.post_id == post_id)
+        .filter(models.DBComment.id == comment_id)
+        .filter(models.DBComment.user_id == current_user_id)
+    )
+
+    current_comment = current_comment_payload.scalars().first()
+
+    if current_comment and content:
+        current_comment.content = content
+        await db.commit()
+        await db.refresh(current_comment)
+        return current_comment
+    raise HTTPException(status_code=400, detail="An error has been occurred.")

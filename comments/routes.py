@@ -26,3 +26,15 @@ async def delete_comment(
     db: AsyncSession = Depends(get_db)
 ):
     return await views.delete_comment(request=request, response=response, post_id=post_id, comment_id=comment_id, db=db)
+
+
+@router.patch("/posts/{post_id}/all-comments/{comment_id}/")
+async def patch_comment(
+    post_id: int,
+    comment_id: int,
+    request: Request,
+    response: Response,
+    content: str = None,
+    db: AsyncSession = Depends(get_db)
+):
+    return await views.patch_comment(request=request, response=response, post_id=post_id, comment_id=comment_id, content=content, db=db)
