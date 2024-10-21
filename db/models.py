@@ -7,10 +7,10 @@ from sqlalchemy import (
     Text,
     func,
     UniqueConstraint,
-    Index,
+    Index, Boolean,
 )
 from sqlalchemy.orm import relationship, validates
-from db.engine import Base, user_chat_table
+from db.engine import Base
 from sqlalchemy.dialects.postgresql import ENUM
 from enum import Enum as PyEnum
 
@@ -53,11 +53,9 @@ class DBUser(Base):
         "DBComment", back_populates="user", cascade="all, delete-orphan"
     )
 
-    messages = relationship(
-        "DBMessage", back_populates="user"
-    )
-
-    chats = relationship("DBChat", secondary=user_chat_table, back_populates='participants')
+    conversations = relationship('DBConversationMember', back_populates='user')
+    messages_sent = relationship('DBMessage', back_populates='sender', foreign_keys='DBMessage.sender_id')
+    messages_received = relationship('DBMessage', back_populates='receiver', foreign_keys='DBMessage.receiver_id')
 
 
 class DBPost(Base):
@@ -142,25 +140,42 @@ class DBComment(Base):
         return value
 
 
+class DBConversation(Base):
+    __tablename__ = "conversations"
+
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    name = Column(String(255), nullable=False)
+    is_group = Column(Boolean, nullable=False, default=False)
+    created_at = Column(DateTime, default=func.now())
+
+    members = relationship("DBConversationMember", back_populates="conversation")
+    messages = relationship("DBMessage", back_populates="conversation")
+
+
+class DBConversationMember(Base):
+    __tablename__ = "conversation_members"
+
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    conversation_id = Column(Integer, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False)
+    joined_at = Column(DateTime, default=func.now())
+
+    user = relationship("DBUser", back_populates="conversations")
+    conversation = relationship("DBConversation", back_populates="members")
+
+
 class DBMessage(Base):
     __tablename__ = "messages"
 
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    chat_id = Column(Integer, ForeignKey("chats.id"), nullable=False)
+    sender_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    receiver_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    conversation_id = Column(Integer, ForeignKey('conversations.id', ondelete='CASCADE'), nullable=False)
     content = Column(String(500), nullable=False)
     created_at = Column(DateTime, default=func.now())
 
-    chat = relationship("DBChat", back_populates="messages")
-    user = relationship("DBUser", back_populates="messages")
+    sender = relationship('DBUser', foreign_keys=[sender_id], back_populates='messages_sent')
+    receiver = relationship('DBUser', foreign_keys=[receiver_id], back_populates='messages_received')
+    conversation = relationship('DBConversation', back_populates='messages')
 
-
-class DBChat(Base):
-    __tablename__ = "chats"
-
-    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
-    created_at = Column(DateTime, default=func.now())
-
-    messages = relationship("DBMessage", back_populates="chat", cascade="all, delete-orphan")
-    participants = relationship("DBUser", secondary=user_chat_table, back_populates='chats')
 

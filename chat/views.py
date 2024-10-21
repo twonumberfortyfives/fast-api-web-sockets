@@ -1,40 +1,34 @@
-import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
+from fastapi import Request, Response
+from sqlalchemy.orm import selectinload
+
 from db import models
+from dependencies import get_current_user
 
 
-async def get_or_create_chat(sender_id: int, receiver_id: int, db: AsyncSession):
+async def get_chat(chat_id: int, request: Request, response: Response, db: AsyncSession):
+    current_user_id = (await get_current_user(request=request, response=response, db=db)).id
     result = await db.execute(
         select(models.DBChat)
-        .join(models.DBChatParticipant)
-        .filter(models.DBChatParticipant.user_id == sender_id)
-        .filter(models.DBChatParticipant.chat_id == models.DBChat.id)
-        .filter(models.DBChatParticipant.user_id == receiver_id)
+        .options(
+            selectinload(models.DBChat.messages),
+        )
+        .distinct()
+        .filter(models.DBChat.id == chat_id)
+        .order_by(models.DBChat.created_at)
     )
 
-    chat = result.scalar_one_or_none()
+    chat = result.scalars().first()  # Get the first (and should be the only) chat
+    return [
+        {
+            "id": message.id,
+            "content": message.content,
+            "created_at": message.created_at,
+            "user_id": message.user_id,
+        }
+        for message in chat.messages
+    ]
 
-    if chat:
-        return chat
-    else:
-        # Create a new chat if it doesn't exist
-        new_chat = models.DBChat(chat_id=str(uuid.uuid4()))
-        db.add(new_chat)
-        await db.commit()
-        await db.refresh(new_chat)
-
-        participant_1 = models.DBChatParticipant(chat_id=new_chat.id, user_id=sender_id)
-        participant_2 = models.DBChatParticipant(
-            chat_id=new_chat.id, user_id=receiver_id
-        )
-
-        db.add(participant_1)
-        db.add(participant_2)
-        await db.commit()
-        await db.refresh(participant_1)
-        await db.refresh(participant_2)
-
-        return new_chat

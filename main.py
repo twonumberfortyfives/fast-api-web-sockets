@@ -19,6 +19,7 @@ from fastapi.exceptions import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
+from chat.serializers import MessageCreate
 from db import models
 from db.engine import init_db
 from dependencies import get_db
@@ -98,7 +99,6 @@ async def websocket_comments(
     websocket: WebSocket, post_id: int, db: AsyncSession = Depends(get_db)
 ):
     await manager.connect(websocket, post_id, "post")
-    user_email = None
     while True:
         try:
             access_token = websocket.cookies.get("access_token")
@@ -161,26 +161,98 @@ async def websocket_comments(
                     access_token_value = match.group(1)
                     websocket.cookies["access_token"] = access_token_value
                 else:
-                    await websocket.send_text("Failed to refresh access token. Please log in again.")
+                    # await websocket.send_text("Failed to refresh access token. Please log in again.")
                     await websocket.close()
                     break
         except (jwt.DecodeError, jwt.InvalidTokenError):
-            await websocket.send_text("Invalid token. Please log in again.")
+            # await websocket.send_text("Invalid token. Please log in again.")
             await websocket.close()
             break
         except WebSocketDisconnect:
             manager.disconnect(websocket, post_id, "post")
-            print(f"User {user_email} disconnected from post {post_id}.")
-            await manager.broadcast(f"Client #{user_email} left the chat", post_id, "post")
+            # print(f"User {user_email} disconnected from post {post_id}.")
+            # await manager.broadcast(f"Client #{user_email} left the chat", post_id, "post")
             break
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
 
 
-@app.websocket("/ws/{chat_id}")
+@app.websocket("/ws/{chat_id}/chat/")
 async def websocket_chat(
         websocket: WebSocket,
         chat_id: int,
         db: AsyncSession = Depends(get_db),
 ):
     await manager.connect(websocket, chat_id, "chat")
+    user_email = None
+    while True:
+        try:
+            access_token = websocket.cookies.get("access_token")
+            user_data = jwt.decode(
+                access_token.encode("utf-8"),
+                os.getenv("SECRET_KEY"),
+                algorithms=[os.getenv("ALGORITHM")],
+            )
+            user_email = user_data.get("sub")
+
+            current_user_payload = await db.execute(
+                select(models.DBUser).filter(models.DBUser.email == user_email)
+            )
+            current_user = current_user_payload.scalar()
+
+            data = await websocket.receive_json()
+
+            if data:
+                try:
+                    message_serializer = MessageCreate(
+                        user_id=current_user.id,
+                        chat_id=chat_id,
+                        content=data,
+                    )
+                    new_message = models.DBMessage(
+                        user_id=current_user.id,
+                        chat_id=chat_id,
+                        content=data,
+                    )
+
+                    db.add(new_message)
+                    await db.commit()
+                    await db.refresh(new_message)
+                except Exception as e:
+                    print(e)
+                    raise HTTPException(status_code=400, detail=str(e))
+
+                try:
+                    await manager.broadcast(message_serializer.json(), chat_id, "chat")
+                except RuntimeError:
+                    print("Attempted to send message after WebSocket was closed.")
+                except WebSocketDisconnect:
+                    print(f"Client #{user_email} disconnected during message broadcast.")
+                    break
+
+        except (jwt.ExpiredSignatureError, jwt.exceptions.ExpiredSignatureError):
+            # Refresh the token logic
+            url = "http://localhost:8000/api/is-authenticated/"
+            response = await fetch(url, websocket.cookies)
+            set_cookie_header = response.headers.get("Set-Cookie")
+
+            if set_cookie_header:
+                match = re.search(r"access_token=([^;]+)", set_cookie_header)
+                if match:
+                    access_token_value = match.group(1)
+                    websocket.cookies["access_token"] = access_token_value
+                else:
+                    # await websocket.send_text("Failed to refresh access token. Please log in again.")
+                    await websocket.close()
+                    break
+        except (jwt.DecodeError, jwt.InvalidTokenError):
+            # await websocket.send_text("Invalid token. Please log in again.")
+            await websocket.close()
+            break
+        except WebSocketDisconnect:
+            manager.disconnect(websocket, chat_id, "chat")
+            print(f"User {user_email} disconnected from post {chat_id}.")
+            # await manager.broadcast(f"Client #{user_email} left the chat", chat_id, "chat")
+            break
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))

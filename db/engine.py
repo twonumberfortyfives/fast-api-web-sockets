@@ -30,11 +30,3 @@ async def init_db():
 
 
 Base = declarative_base()
-
-
-user_chat_table = Table(
-    'user_chat',
-    Base.metadata,
-    Column('user_id', Integer, ForeignKey('users.id'), primary_key=True),
-    Column('chat_id', Integer, ForeignKey('chats.id'), primary_key=True)
-)
