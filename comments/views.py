@@ -21,8 +21,16 @@ async def get_all_comments_view(db: AsyncSession, post_id: int):
     return comments
 
 
-async def delete_comment(request: Request, response: Response, post_id: int, comment_id: int, db: AsyncSession):
-    current_user_id = (await get_current_user(request=request, response=response, db=db)).id
+async def delete_comment(
+    request: Request,
+    response: Response,
+    post_id: int,
+    comment_id: int,
+    db: AsyncSession,
+):
+    current_user_id = (
+        await get_current_user(request=request, response=response, db=db)
+    ).id
     current_comment_payload = await db.execute(
         select(models.DBComment)
         .filter(models.DBComment.post_id == post_id)
@@ -39,8 +47,17 @@ async def delete_comment(request: Request, response: Response, post_id: int, com
     raise HTTPException(status_code=400, detail="An error has been occurred.")
 
 
-async def patch_comment(request: Request, response: Response, post_id: int, comment_id: int, content: str, db: AsyncSession):
-    current_user_id = (await get_current_user(request=request, response=response, db=db)).id
+async def patch_comment(
+    request: Request,
+    response: Response,
+    post_id: int,
+    comment_id: int,
+    content: str,
+    db: AsyncSession,
+):
+    current_user_id = (
+        await get_current_user(request=request, response=response, db=db)
+    ).id
     current_comment_payload = await db.execute(
         select(models.DBComment)
         .filter(models.DBComment.post_id == post_id)

@@ -71,7 +71,13 @@ async def create_post(
     db: AsyncSession = Depends(get_db),
 ):
     return await views.create_post_view(
-        db=db, request=request, topic=topic, content=content, tags=tags, files=files, response=response
+        db=db,
+        request=request,
+        topic=topic,
+        content=content,
+        tags=tags,
+        files=files,
+        response=response,
     )
 
 

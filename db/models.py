@@ -7,7 +7,8 @@ from sqlalchemy import (
     Text,
     func,
     UniqueConstraint,
-    Index, Boolean,
+    Index,
+    Boolean,
 )
 from sqlalchemy.orm import relationship, validates
 from db.engine import Base
@@ -21,10 +22,12 @@ class Role(PyEnum):
 
 
 class DBFile(Base):
-    __tablename__ = 'files'
+    __tablename__ = "files"
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     link = Column(String)
-    post_id = Column(Integer, ForeignKey('posts.id', ondelete='CASCADE'), nullable=False)
+    post_id = Column(
+        Integer, ForeignKey("posts.id", ondelete="CASCADE"), nullable=False
+    )
 
     post = relationship("DBPost", back_populates="files")
 
@@ -53,9 +56,13 @@ class DBUser(Base):
         "DBComment", back_populates="user", cascade="all, delete-orphan"
     )
 
-    conversations = relationship('DBConversationMember', back_populates='user')
-    messages_sent = relationship('DBMessage', back_populates='sender', foreign_keys='DBMessage.sender_id')
-    messages_received = relationship('DBMessage', back_populates='receiver', foreign_keys='DBMessage.receiver_id')
+    conversations = relationship("DBConversationMember", back_populates="user")
+    messages_sent = relationship(
+        "DBMessage", back_populates="sender", foreign_keys="DBMessage.sender_id"
+    )
+    messages_received = relationship(
+        "DBMessage", back_populates="receiver", foreign_keys="DBMessage.receiver_id"
+    )
 
 
 class DBPost(Base):
@@ -64,7 +71,9 @@ class DBPost(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     topic = Column(String(255), nullable=True)
     content = Column(String(500), nullable=False)
-    files = relationship("DBFile", back_populates="post", cascade="all, delete-orphan")  # Relationship to files
+    files = relationship(
+        "DBFile", back_populates="post", cascade="all, delete-orphan"
+    )  # Relationship to files
     _tags = Column(String(500), nullable=True)
     user_id = Column(
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
@@ -155,8 +164,12 @@ class DBConversationMember(Base):
     __tablename__ = "conversation_members"
 
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    conversation_id = Column(Integer, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    conversation_id = Column(
+        Integer, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False
+    )
     joined_at = Column(DateTime, default=func.now())
 
     user = relationship("DBUser", back_populates="conversations")
@@ -167,14 +180,22 @@ class DBMessage(Base):
     __tablename__ = "messages"
 
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
-    sender_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
-    receiver_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
-    conversation_id = Column(Integer, ForeignKey('conversations.id', ondelete='CASCADE'), nullable=False)
+    sender_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    receiver_id = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    conversation_id = Column(
+        Integer, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False
+    )
     content = Column(String(500), nullable=False)
     created_at = Column(DateTime, default=func.now())
 
-    sender = relationship('DBUser', foreign_keys=[sender_id], back_populates='messages_sent')
-    receiver = relationship('DBUser', foreign_keys=[receiver_id], back_populates='messages_received')
-    conversation = relationship('DBConversation', back_populates='messages')
-
-
+    sender = relationship(
+        "DBUser", foreign_keys=[sender_id], back_populates="messages_sent"
+    )
+    receiver = relationship(
+        "DBUser", foreign_keys=[receiver_id], back_populates="messages_received"
+    )
+    conversation = relationship("DBConversation", back_populates="messages")

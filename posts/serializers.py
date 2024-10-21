@@ -1,6 +1,13 @@
 from typing import Optional, List
 
-from pydantic import BaseModel, Field, EmailStr, field_validator, HttpUrl, model_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    EmailStr,
+    field_validator,
+    HttpUrl,
+    model_validator,
+)
 from datetime import datetime, timezone
 
 
@@ -21,7 +28,9 @@ class PostPatch(BaseModel):
     class Config:
         from_attributes = True
         json_encoders = {
-            datetime: lambda v: v.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+            datetime: lambda v: v.astimezone(timezone.utc)
+            .isoformat()
+            .replace("+00:00", "Z")
         }
 
 
@@ -37,7 +46,9 @@ class Post(BaseModel):
     class Config:
         from_attributes = True
         json_encoders = {
-            datetime: lambda v: v.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+            datetime: lambda v: v.astimezone(timezone.utc)
+            .isoformat()
+            .replace("+00:00", "Z")
         }
 
 

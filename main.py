@@ -61,8 +61,8 @@ async def on_startup():
 class ConnectionManager:
     def __init__(self):
         self.active_connections: dict[str, dict[int, list[WebSocket]]] = {
-            'chat': {},
-            'post': {}
+            "chat": {},
+            "post": {},
         }
 
     async def connect(self, websocket: WebSocket, group_name: int, group_type: str):
@@ -145,7 +145,9 @@ async def websocket_comments(
                 except RuntimeError:
                     print("Attempted to send message after WebSocket was closed.")
                 except WebSocketDisconnect:
-                    print(f"Client #{user_email} disconnected during message broadcast.")
+                    print(
+                        f"Client #{user_email} disconnected during message broadcast."
+                    )
                     break
 
         except (jwt.ExpiredSignatureError, jwt.exceptions.ExpiredSignatureError):
@@ -179,9 +181,9 @@ async def websocket_comments(
 
 @app.websocket("/ws/{user_id}/send-message/")
 async def websocket_chat(
-        websocket: WebSocket,
-        user_id: int,
-        db: AsyncSession = Depends(get_db),
+    websocket: WebSocket,
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
 ):
     await manager.connect(websocket, user_id, "chat")
     user_email = None
@@ -229,7 +231,9 @@ async def websocket_chat(
                 except RuntimeError:
                     print("Attempted to send message after WebSocket was closed.")
                 except WebSocketDisconnect:
-                    print(f"Client #{user_email} disconnected during message broadcast.")
+                    print(
+                        f"Client #{user_email} disconnected during message broadcast."
+                    )
                     break
 
         except (jwt.ExpiredSignatureError, jwt.exceptions.ExpiredSignatureError):

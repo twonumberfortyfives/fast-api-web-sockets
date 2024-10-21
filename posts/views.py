@@ -81,8 +81,8 @@ async def retrieve_post_view(
             ).id
 
             posts_with_full_info = await get_posts_with_full_info(
-                    posts=posts, current_user_id=current_user_id
-                )
+                posts=posts, current_user_id=current_user_id
+            )
             return posts_with_full_info
         except HTTPException as e:
             if e.status_code == 401:
@@ -134,13 +134,19 @@ async def create_post_view(
 
     # Validate input fields
     if not topic or not topic.strip():
-        raise HTTPException(status_code=400, detail="Topic cannot be empty or contain only spaces.")
+        raise HTTPException(
+            status_code=400, detail="Topic cannot be empty or contain only spaces."
+        )
 
     if not content or not content.strip():
-        raise HTTPException(status_code=400, detail="Content cannot be empty or contain only spaces.")
+        raise HTTPException(
+            status_code=400, detail="Content cannot be empty or contain only spaces."
+        )
 
     if tags is not None and not tags.strip():
-        raise HTTPException(status_code=400, detail="Tags cannot be empty or contain only spaces.")
+        raise HTTPException(
+            status_code=400, detail="Tags cannot be empty or contain only spaces."
+        )
 
     new_post = models.DBPost(
         topic=topic,
@@ -167,7 +173,9 @@ async def create_post_view(
             async with aiofiles.open(image_path, "wb") as f:
                 await f.write(await file.read())
 
-            file_record = models.DBFile(link=f"http://127.0.0.1:8000/{image_path}", post_id=new_post.id)
+            file_record = models.DBFile(
+                link=f"http://127.0.0.1:8000/{image_path}", post_id=new_post.id
+            )
             db.add(file_record)
             list_of_file_records.append(file_record)
 
