@@ -4,10 +4,10 @@ from pydantic import BaseModel, Field
 
 
 class MessageCreate(BaseModel):
-    user_id: int
-    chat_id: int
+    sender_id: int
+    receiver_id: int
+    conversation_id: int
     content: str
-
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Config:

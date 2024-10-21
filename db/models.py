@@ -145,7 +145,6 @@ class DBConversation(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     name = Column(String(255), nullable=False)
-    is_group = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime, default=func.now())
 
     members = relationship("DBConversationMember", back_populates="conversation")

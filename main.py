@@ -177,13 +177,13 @@ async def websocket_comments(
             raise HTTPException(status_code=400, detail=str(e))
 
 
-@app.websocket("/ws/{chat_id}/chat/")
+@app.websocket("/ws/{user_id}/send-message/")
 async def websocket_chat(
         websocket: WebSocket,
-        chat_id: int,
+        user_id: int,
         db: AsyncSession = Depends(get_db),
 ):
-    await manager.connect(websocket, chat_id, "chat")
+    await manager.connect(websocket, user_id, "chat")
     user_email = None
     while True:
         try:
@@ -205,13 +205,15 @@ async def websocket_chat(
             if data:
                 try:
                     message_serializer = MessageCreate(
-                        user_id=current_user.id,
-                        chat_id=chat_id,
+                        sender_id=current_user.id,
+                        receiver_id=user_id,
+                        conversation_id=1,
                         content=data,
                     )
                     new_message = models.DBMessage(
-                        user_id=current_user.id,
-                        chat_id=chat_id,
+                        sender_id=current_user.id,
+                        receiver_id=user_id,
+                        conversation_id=1,
                         content=data,
                     )
 
@@ -223,7 +225,7 @@ async def websocket_chat(
                     raise HTTPException(status_code=400, detail=str(e))
 
                 try:
-                    await manager.broadcast(message_serializer.json(), chat_id, "chat")
+                    await manager.broadcast(message_serializer.json(), user_id, "chat")
                 except RuntimeError:
                     print("Attempted to send message after WebSocket was closed.")
                 except WebSocketDisconnect:
@@ -250,8 +252,8 @@ async def websocket_chat(
             await websocket.close()
             break
         except WebSocketDisconnect:
-            manager.disconnect(websocket, chat_id, "chat")
-            print(f"User {user_email} disconnected from post {chat_id}.")
+            manager.disconnect(websocket, user_id, "chat")
+            print(f"User {user_email} disconnected from post {user_id}.")
             # await manager.broadcast(f"Client #{user_email} left the chat", chat_id, "chat")
             break
         except Exception as e:

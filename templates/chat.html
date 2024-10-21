@@ -13,7 +13,7 @@
         <ul id='messages'>
         </ul>
         <script>
-            var ws = new WebSocket(`ws://localhost:8000/ws/1/chat/`);
+            var ws = new WebSocket(`ws://localhost:8000/ws/2/send-message/`);
             ws.onmessage = function(event) {
                 var messages = document.getElementById('messages')
                 var message = document.createElement('li')
