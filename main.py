@@ -18,6 +18,7 @@ from fastapi.exceptions import HTTPException
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 
 from chat.serializers import MessageCreate
 from db import models
@@ -190,6 +191,11 @@ async def websocket_chat(
     while True:
         try:
             access_token = websocket.cookies.get("access_token")
+
+            if access_token is None:
+                await websocket.close()
+                break
+
             user_data = jwt.decode(
                 access_token.encode("utf-8"),
                 os.getenv("SECRET_KEY"),
@@ -206,22 +212,73 @@ async def websocket_chat(
 
             if data:
                 try:
+                    query = await db.execute(
+                        select(models.DBConversation)
+                        .outerjoin(models.DBConversationMember, models.DBConversationMember.conversation_id == models.DBConversation.id)
+                        .options(selectinload(models.DBConversation.members))
+                    )
+                    all_conversations = query.scalars().all()
+
+                    sender = (await db.execute(
+                        select(models.DBConversationMember)
+                        .filter(models.DBConversationMember.user_id == current_user.id)
+                    )).scalars().first()
+
+                    receiver = (await db.execute(
+                        select(models.DBConversationMember)
+                        .filter(models.DBConversationMember.user_id == user_id)
+                    )).scalars().first()
+
+                    exists_conversation_id = None
+
+                    for conversation in all_conversations:
+                        if sender in conversation.members and receiver in conversation.members:
+
+                            exists_conversation_id = conversation.id
+
+                    if not exists_conversation_id:
+
+                        new_conversation = models.DBConversation(
+                            name="New Conversation",
+                        )
+                        db.add(new_conversation)
+                        await db.commit()
+                        await db.refresh(new_conversation)
+
+                        exists_conversation_id = new_conversation.id
+
+                        sender_member = models.DBConversationMember(
+                            user_id=current_user.id,
+                            conversation_id=exists_conversation_id,
+                        )
+
+                        receiver_member = models.DBConversationMember(
+                            user_id=user_id,
+                            conversation_id=exists_conversation_id,
+                        )
+                        db.add(sender_member)
+                        db.add(receiver_member)
+                        await db.commit()
+                        await db.refresh(sender_member)
+                        await db.refresh(receiver_member)
+
                     message_serializer = MessageCreate(
                         sender_id=current_user.id,
                         receiver_id=user_id,
-                        conversation_id=1,
+                        conversation_id=exists_conversation_id,
                         content=data,
                     )
                     new_message = models.DBMessage(
                         sender_id=current_user.id,
                         receiver_id=user_id,
-                        conversation_id=1,
+                        conversation_id=exists_conversation_id,
                         content=data,
                     )
 
                     db.add(new_message)
                     await db.commit()
                     await db.refresh(new_message)
+
                 except Exception as e:
                     print(e)
                     raise HTTPException(status_code=400, detail=str(e))

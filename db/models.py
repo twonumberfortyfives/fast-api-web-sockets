@@ -4,11 +4,9 @@ from sqlalchemy import (
     String,
     ForeignKey,
     DateTime,
-    Text,
     func,
     UniqueConstraint,
     Index,
-    Boolean,
 )
 from sqlalchemy.orm import relationship, validates
 from db.engine import Base
