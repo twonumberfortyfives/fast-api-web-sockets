@@ -54,3 +54,17 @@ class Chat(BaseModel):
             .isoformat()
             .replace("+00:00", "Z")
         }
+
+
+class ChatList(BaseModel):
+    id: int
+    name: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    class Config:
+        from_attributes = True
+        json_encoders = {
+            datetime: lambda v: v.astimezone(timezone.utc)
+            .isoformat()
+            .replace("+00:00", "Z")
+        }
