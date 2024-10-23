@@ -18,25 +18,44 @@ async def get_chat_history(
     result = await db.execute(
         select(models.DBConversation)
         .outerjoin(models.DBConversationMember, models.DBConversationMember.conversation_id == models.DBConversation.id)
-        .options(
-            selectinload(models.DBConversation.members),
-        )
         .outerjoin(models.DBMessage, models.DBMessage.conversation_id == models.DBConversation.id)
         .options(
-            selectinload(models.DBConversation.messages)
+            selectinload(models.DBConversation.members)
+            .selectinload(models.DBConversationMember.user),  # Load members
+            selectinload(models.DBConversation.messages)  # Load messages
+            .selectinload(models.DBMessage.sender)  # Load message sender
         )
-        .distinct()
         .filter(models.DBConversation.id == chat_id)
+        .filter(models.DBConversationMember.user_id == current_user_id)
         .order_by(models.DBConversation.created_at)
     )
 
     chat = result.scalars().first()
+
     if chat:
         return {
             "id": chat.id,
-            "messages": [message for message in chat.messages],
+            "messages": [
+                {
+                    "id": message.id,
+                    "sender_id": message.sender_id,
+                    "username": message.sender.username,
+                    "profile_picture": message.sender.profile_picture,  # Access profile picture
+                    "content": message.content,
+                    "created_at": message.created_at,
+                }
+                for message in chat.messages
+            ],
             "created_at": chat.created_at,
-            "members": [member for member in chat.members],
+            "members": [
+                {
+                    "id": member.user.id,
+                    "username": member.user.username,
+                    "email": member.user.email,
+                    "profile_picture": member.user.profile_picture,
+                }
+                for member in chat.members
+            ],
         }
     raise HTTPException(status_code=400, detail="No chats found.")
 
