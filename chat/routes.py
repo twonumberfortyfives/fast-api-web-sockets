@@ -38,3 +38,20 @@ async def delete_chat(
         db: AsyncSession = Depends(get_db),
 ):
     return await views.delete_chat(chat_id=chat_id, request=request, response=response, db=db)
+
+
+@router.post("/chats/{user_id}/send-message/")
+async def send_message_and_create_chat(
+        request: Request,
+        response: Response,
+        message: serializers.MessageAndChatCreate,
+        user_id: int,
+        db: AsyncSession = Depends(get_db)
+):
+    return await views.send_message_and_create_chat(
+        request=request,
+        response=response,
+        message=message,
+        user_id=user_id,
+        db=db,
+    )

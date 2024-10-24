@@ -90,3 +90,7 @@ class MessagesList(BaseModel):
         values.username = values.sender.username
         values.profile_picture = values.sender.profile_picture
         return values
+
+
+class MessageAndChatCreate(BaseModel):
+    content: str
