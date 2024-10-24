@@ -28,3 +28,13 @@ async def get_all_chats(
         db: AsyncSession = Depends(get_db)
 ) -> Page[serializers.ChatList]:
     return paginate(await views.get_all_chats(request=request, response=response, db=db))
+
+
+@router.delete("/chats/{chat_id}")
+async def delete_chat(
+        request: Request,
+        response: Response,
+        chat_id: int,
+        db: AsyncSession = Depends(get_db),
+):
+    return await views.delete_chat(chat_id=chat_id, request=request, response=response, db=db)

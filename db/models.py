@@ -154,8 +154,8 @@ class DBConversation(Base):
     name = Column(String(255), nullable=False)
     created_at = Column(DateTime, default=func.now())
 
-    members = relationship("DBConversationMember", back_populates="conversation")
-    messages = relationship("DBMessage", back_populates="conversation")
+    members = relationship("DBConversationMember", back_populates="conversation", cascade="all, delete-orphan")
+    messages = relationship("DBMessage", back_populates="conversation", cascade="all, delete-orphan")
 
 
 class DBConversationMember(Base):

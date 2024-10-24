@@ -51,3 +51,22 @@ async def get_all_chats(request: Request, response: Response, db: AsyncSession):
     if all_chats:
         return all_chats
     raise HTTPException(status_code=400, detail="No chats found.")
+
+
+async def delete_chat(chat_id: int, request: Request, response: Response, db: AsyncSession):
+    current_user = await get_current_user(request=request, response=response, db=db)
+    query = await db.execute(
+        select(models.DBConversation)
+        .outerjoin(models.DBConversationMember, models.DBConversationMember.conversation_id == models.DBConversation.id)
+        .options(selectinload(models.DBConversation.members))
+        .filter(models.DBConversationMember.user_id == current_user.id)
+        .filter(models.DBConversation.id == chat_id)
+        .distinct()
+    )
+    found_chat = query.scalars().first()
+
+    if found_chat:
+        await db.delete(found_chat)
+        await db.commit()
+        return {"message": "Chat has been deleted."}
+    raise HTTPException(status_code=400, detail="No chats found.")

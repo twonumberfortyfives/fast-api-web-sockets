@@ -8,6 +8,7 @@ from fastapi import (
     WebSocket,
     WebSocketDisconnect,
     Depends,
+
 )
 from fastapi.staticfiles import StaticFiles
 
@@ -15,10 +16,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi_pagination import add_pagination
 from fastapi.templating import Jinja2Templates
 from fastapi.exceptions import HTTPException
+from sqlalchemy import func
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import selectinload
 
 from chat.serializers import MessageCreate
 from db import models
@@ -113,7 +114,7 @@ async def websocket_comments(
             current_user_payload = await db.execute(
                 select(models.DBUser).filter(models.DBUser.email == user_email)
             )
-            current_user = current_user_payload.scalar()
+            current_user = current_user_payload.scalars().first()
 
             data = await websocket.receive_json()
 
@@ -180,6 +181,34 @@ async def websocket_comments(
             raise HTTPException(status_code=400, detail=str(e))
 
 
+async def get_or_create_conversation(sender_id: int, receiver_id: int, db: AsyncSession):
+    query = await db.execute(
+        select(models.DBConversation.id)
+        .join(models.DBConversationMember, models.DBConversation.id == models.DBConversationMember.conversation_id)
+        .where(models.DBConversationMember.user_id.in_([sender_id, receiver_id]))
+        .group_by(models.DBConversation.id)
+        .having(func.count(models.DBConversationMember.id) == 2)
+    )
+    conversation_id = query.scalars().first()
+
+    if not conversation_id:
+        new_conversation = models.DBConversation(name="New Conversation")
+        db.add(new_conversation)
+        await db.commit()
+        await db.refresh(new_conversation)
+
+        members = [
+            models.DBConversationMember(user_id=sender_id, conversation_id=new_conversation.id),
+            models.DBConversationMember(user_id=receiver_id, conversation_id=new_conversation.id)
+        ]
+        db.add_all(members)
+        await db.commit()
+        await db.refresh(members)
+        conversation_id = new_conversation.id
+        return conversation_id
+    return conversation_id
+
+
 @app.websocket("/ws/{user_id}/send-message/")
 async def websocket_chat(
     websocket: WebSocket,
@@ -206,61 +235,25 @@ async def websocket_chat(
             current_user_payload = await db.execute(
                 select(models.DBUser).filter(models.DBUser.email == user_email)
             )
-            current_user = current_user_payload.scalar()
+            current_user = current_user_payload.scalars().first()
 
             data = await websocket.receive_json()
 
             if data:
                 try:
-                    query = await db.execute(
-                        select(models.DBConversation)
-                        .outerjoin(models.DBConversationMember, models.DBConversationMember.conversation_id == models.DBConversation.id)
-                        .options(selectinload(models.DBConversation.members))
+                    exists_conversation_id = await get_or_create_conversation(sender_id=current_user.id, receiver_id=user_id, db=db)
+
+                    print(exists_conversation_id)
+
+                    new_message = models.DBMessage(
+                        sender_id=current_user.id,
+                        receiver_id=user_id,
+                        conversation_id=exists_conversation_id,
+                        content=data,
                     )
-                    all_conversations = query.scalars().all()
-
-                    sender = (await db.execute(
-                        select(models.DBConversationMember)
-                        .filter(models.DBConversationMember.user_id == current_user.id)
-                    )).scalars().first()
-
-                    receiver = (await db.execute(
-                        select(models.DBConversationMember)
-                        .filter(models.DBConversationMember.user_id == user_id)
-                    )).scalars().first()
-
-                    exists_conversation_id = None
-
-                    for conversation in all_conversations:
-                        if sender in conversation.members and receiver in conversation.members:
-
-                            exists_conversation_id = conversation.id
-
-                    if not exists_conversation_id:
-
-                        new_conversation = models.DBConversation(
-                            name="New Conversation",
-                        )
-                        db.add(new_conversation)
-                        await db.commit()
-                        await db.refresh(new_conversation)
-
-                        exists_conversation_id = new_conversation.id
-
-                        sender_member = models.DBConversationMember(
-                            user_id=current_user.id,
-                            conversation_id=exists_conversation_id,
-                        )
-
-                        receiver_member = models.DBConversationMember(
-                            user_id=user_id,
-                            conversation_id=exists_conversation_id,
-                        )
-                        db.add(sender_member)
-                        db.add(receiver_member)
-                        await db.commit()
-                        await db.refresh(sender_member)
-                        await db.refresh(receiver_member)
+                    db.add(new_message)
+                    await db.commit()
+                    await db.refresh(new_message)
 
                     message_serializer = MessageCreate(
                         sender_id=current_user.id,
@@ -268,25 +261,19 @@ async def websocket_chat(
                         conversation_id=exists_conversation_id,
                         content=data,
                     )
-                    new_message = models.DBMessage(
-                        sender_id=current_user.id,
-                        receiver_id=user_id,
-                        conversation_id=exists_conversation_id,
-                        content=data,
-                    )
-
-                    db.add(new_message)
-                    await db.commit()
-                    await db.refresh(new_message)
 
                 except Exception as e:
                     print(e)
                     raise HTTPException(status_code=400, detail=str(e))
 
                 try:
+
                     await manager.broadcast(message_serializer.json(), user_id, "chat")
-                except RuntimeError:
-                    print("Attempted to send message after WebSocket was closed.")
+
+                except RuntimeError as e:
+                    print(f"Attempted to send message after WebSocket was closed. {e}")
+                    await websocket.close()
+                    break
                 except WebSocketDisconnect:
                     print(
                         f"Client #{user_email} disconnected during message broadcast."
