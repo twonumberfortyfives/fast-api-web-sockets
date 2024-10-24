@@ -81,7 +81,10 @@ class ConnectionManager:
     async def broadcast(self, message: str, group_name: int, group_type: str):
         if group_name in self.active_connections[group_type]:
             for connection in self.active_connections[group_type][group_name]:
-                await connection.send_text(message)
+                try:
+                    await connection.send_text(message)
+                except Exception as e:
+                    print(f"Error sending message to {connection.client}: {e}")
 
 
 manager = ConnectionManager()
