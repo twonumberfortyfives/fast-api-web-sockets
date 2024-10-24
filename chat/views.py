@@ -12,51 +12,27 @@ from dependencies import get_current_user
 async def get_chat_history(
     chat_id: int, request: Request, response: Response, db: AsyncSession
 ):
-    current_user_id = (
+    current_user = (
         await get_current_user(request=request, response=response, db=db)
-    ).id
+    )
     result = await db.execute(
-        select(models.DBConversation)
-        .outerjoin(models.DBConversationMember, models.DBConversationMember.conversation_id == models.DBConversation.id)
-        .outerjoin(models.DBMessage, models.DBMessage.conversation_id == models.DBConversation.id)
-        .options(
-            selectinload(models.DBConversation.members)
-            .selectinload(models.DBConversationMember.user),  # Load members
-            selectinload(models.DBConversation.messages)  # Load messages
-            .selectinload(models.DBMessage.sender)  # Load message sender
-        )
+        select(models.DBMessage)
+        .join(models.DBConversation,
+              models.DBMessage.conversation_id == models.DBConversation.id)
+        .join(models.DBConversationMember,
+              models.DBConversationMember.conversation_id == models.DBConversation.id)
+        .options(selectinload(models.DBMessage.sender))
         .filter(models.DBConversation.id == chat_id)
-        .filter(models.DBConversationMember.user_id == current_user_id)
-        .order_by(models.DBConversation.created_at)
+        .filter(
+            models.DBConversationMember.user_id == current_user.id)
+        .order_by(models.DBMessage.created_at)
     )
 
-    chat = result.scalars().first()
+    chat = result.scalars().all()
 
     if chat:
-        return {
-            "id": chat.id,
-            "messages": [
-                {
-                    "id": message.id,
-                    "sender_id": message.sender_id,
-                    "username": message.sender.username,
-                    "profile_picture": message.sender.profile_picture,  # Access profile picture
-                    "content": message.content,
-                    "created_at": message.created_at,
-                }
-                for message in chat.messages
-            ],
-            "created_at": chat.created_at,
-            "members": [
-                {
-                    "id": member.user.id,
-                    "username": member.user.username,
-                    "email": member.user.email,
-                    "profile_picture": member.user.profile_picture,
-                }
-                for member in chat.members
-            ],
-        }
+        return chat
+
     raise HTTPException(status_code=400, detail="No chats found.")
 
 
