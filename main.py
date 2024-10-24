@@ -267,13 +267,9 @@ async def websocket_chat(
                     raise HTTPException(status_code=400, detail=str(e))
 
                 try:
-
                     await manager.broadcast(message_serializer.json(), user_id, "chat")
-
-                except RuntimeError as e:
-                    print(f"Attempted to send message after WebSocket was closed. {e}")
-                    await websocket.close()
-                    break
+                except RuntimeError:
+                    print("Attempted to send message after WebSocket was closed.")
                 except WebSocketDisconnect:
                     print(
                         f"Client #{user_email} disconnected during message broadcast."
