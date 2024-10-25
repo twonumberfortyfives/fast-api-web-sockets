@@ -1,3 +1,4 @@
+import base64
 import uuid
 
 from sqlalchemy import func
@@ -11,7 +12,7 @@ from sqlalchemy.util import NoneType
 
 from chat import serializers
 from db import models
-from dependencies import get_current_user
+from dependencies import get_current_user, encrypt_message
 
 
 async def get_chat_history(
@@ -96,6 +97,8 @@ async def send_message_and_create_chat(
     db: AsyncSession,
 ):
     current_user = await get_current_user(request=request, response=response, db=db)
+    encrypted_message = await encrypt_message(message.content)
+    encoded_data = base64.b64encode(encrypted_message).decode('utf-8')
 
     query = await db.execute(
         select(models.DBConversation)
@@ -118,7 +121,7 @@ async def send_message_and_create_chat(
     )
 
     if conversation is None:
-        new_conversation = models.DBConversation(name=str(uuid.uuid4()))
+        new_conversation = models.DBConversation(name="New Chat")
         db.add(new_conversation)
         await db.commit()
         await db.refresh(new_conversation)
@@ -136,7 +139,7 @@ async def send_message_and_create_chat(
             sender_id=current_user.id,
             receiver_id=user_id,
             conversation_id=new_conversation.id,
-            content=message.content,
+            content=encoded_data,
         )
         db.add(new_message)
         await db.commit()
@@ -148,7 +151,7 @@ async def send_message_and_create_chat(
         sender_id=current_user.id,
         receiver_id=user_id,
         conversation_id=conversation.id,
-        content=message.content,
+        content=encoded_data,
     )
     db.add(new_message)
     await db.commit()

@@ -2,6 +2,7 @@ import os
 from datetime import datetime, timedelta, timezone
 
 import jwt
+from cryptography.fernet import Fernet
 from fastapi import Depends, Request, HTTPException, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -15,6 +16,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_TIME_MINUTES = timedelta(minutes=1)
 REFRESH_TOKEN_EXPIRE_TIME_DAYS = timedelta(days=30)
+cipher = Fernet(os.getenv('ENCRYPTION_KEY'))
 
 
 async def get_db() -> AsyncSession:
@@ -138,3 +140,11 @@ async def get_posts_with_full_info(posts, current_user_id: int):
         }
         for post in posts
     ]
+
+
+async def encrypt_message(message: str) -> bytes:
+    return cipher.encrypt(message.encode())
+
+
+async def decrypt_message(encrypted_message: bytes) -> str:
+    return cipher.decrypt(encrypted_message).decode()
