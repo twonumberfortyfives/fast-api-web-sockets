@@ -34,7 +34,10 @@ async def delete_comment(
     )
 
 
-@router.patch("/posts/{post_id}/all-comments/{comment_id}/", response_model=serializers.CommentList)
+@router.patch(
+    "/posts/{post_id}/all-comments/{comment_id}/",
+    response_model=serializers.CommentList,
+)
 async def patch_comment(
     post_id: int,
     comment_id: int,

@@ -15,21 +15,22 @@ from dependencies import get_current_user
 
 
 async def get_chat_history(
-        chat_id: int, request: Request, response: Response, db: AsyncSession
+    chat_id: int, request: Request, response: Response, db: AsyncSession
 ):
-    current_user = (
-        await get_current_user(request=request, response=response, db=db)
-    )
+    current_user = await get_current_user(request=request, response=response, db=db)
     result = await db.execute(
         select(models.DBMessage)
-        .join(models.DBConversation,
-              models.DBMessage.conversation_id == models.DBConversation.id)
-        .join(models.DBConversationMember,
-              models.DBConversationMember.conversation_id == models.DBConversation.id)
+        .join(
+            models.DBConversation,
+            models.DBMessage.conversation_id == models.DBConversation.id,
+        )
+        .join(
+            models.DBConversationMember,
+            models.DBConversationMember.conversation_id == models.DBConversation.id,
+        )
         .options(selectinload(models.DBMessage.sender))
         .filter(models.DBConversation.id == chat_id)
-        .filter(
-            models.DBConversationMember.user_id == current_user.id)
+        .filter(models.DBConversationMember.user_id == current_user.id)
         .order_by(models.DBMessage.created_at)
     )
 
@@ -42,11 +43,16 @@ async def get_chat_history(
 
 
 async def get_all_chats(request: Request, response: Response, db: AsyncSession):
-    current_user_id = (await get_current_user(request=request, response=response, db=db)).id
+    current_user_id = (
+        await get_current_user(request=request, response=response, db=db)
+    ).id
 
     query = await db.execute(
         select(models.DBConversation)
-        .outerjoin(models.DBConversationMember, models.DBConversationMember.conversation_id == models.DBConversation.id)
+        .outerjoin(
+            models.DBConversationMember,
+            models.DBConversationMember.conversation_id == models.DBConversation.id,
+        )
         .options(selectinload(models.DBConversation.members))
         .filter(models.DBConversationMember.user_id == current_user_id)
         .distinct()
@@ -58,11 +64,16 @@ async def get_all_chats(request: Request, response: Response, db: AsyncSession):
     raise HTTPException(status_code=400, detail="No chats found.")
 
 
-async def delete_chat(chat_id: int, request: Request, response: Response, db: AsyncSession):
+async def delete_chat(
+    chat_id: int, request: Request, response: Response, db: AsyncSession
+):
     current_user = await get_current_user(request=request, response=response, db=db)
     query = await db.execute(
         select(models.DBConversation)
-        .outerjoin(models.DBConversationMember, models.DBConversationMember.conversation_id == models.DBConversation.id)
+        .outerjoin(
+            models.DBConversationMember,
+            models.DBConversationMember.conversation_id == models.DBConversation.id,
+        )
         .options(selectinload(models.DBConversation.members))
         .filter(models.DBConversationMember.user_id == current_user.id)
         .filter(models.DBConversation.id == chat_id)
@@ -78,31 +89,32 @@ async def delete_chat(chat_id: int, request: Request, response: Response, db: As
 
 
 async def send_message_and_create_chat(
-        request: Request,
-        response: Response,
-        message: serializers.MessageAndChatCreate,
-        user_id: int,
-        db: AsyncSession,
+    request: Request,
+    response: Response,
+    message: serializers.MessageAndChatCreate,
+    user_id: int,
+    db: AsyncSession,
 ):
-    current_user = await get_current_user(
-        request=request,
-        response=response,
-        db=db
-    )
+    current_user = await get_current_user(request=request, response=response, db=db)
 
     query = await db.execute(
         select(models.DBConversation)
-        .join(models.DBConversationMember, models.DBConversationMember.conversation_id == models.DBConversation.id)
-        .options(selectinload(models.DBConversation.members))
-        .where(
-            models.DBConversationMember.user_id == current_user.id
+        .join(
+            models.DBConversationMember,
+            models.DBConversationMember.conversation_id == models.DBConversation.id,
         )
+        .options(selectinload(models.DBConversation.members))
+        .where(models.DBConversationMember.user_id == current_user.id)
     )
     my_conversations = query.scalars().all()
 
     conversation = next(
-        (conv for conv in my_conversations if any(member.user_id == user_id for member in conv.members)),
-        None
+        (
+            conv
+            for conv in my_conversations
+            if any(member.user_id == user_id for member in conv.members)
+        ),
+        None,
     )
 
     if conversation is None:
@@ -111,8 +123,12 @@ async def send_message_and_create_chat(
         await db.commit()
         await db.refresh(new_conversation)
 
-        member1 = models.DBConversationMember(user_id=current_user.id, conversation_id=new_conversation.id)
-        member2 = models.DBConversationMember(user_id=user_id, conversation_id=new_conversation.id)
+        member1 = models.DBConversationMember(
+            user_id=current_user.id, conversation_id=new_conversation.id
+        )
+        member2 = models.DBConversationMember(
+            user_id=user_id, conversation_id=new_conversation.id
+        )
         db.add_all([member1, member2])
         await db.commit()
 

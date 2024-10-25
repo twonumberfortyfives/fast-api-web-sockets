@@ -8,7 +8,6 @@ from fastapi import (
     WebSocket,
     WebSocketDisconnect,
     Depends,
-
 )
 from fastapi.staticfiles import StaticFiles
 
@@ -16,7 +15,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi_pagination import add_pagination
 from fastapi.templating import Jinja2Templates
 from fastapi.exceptions import HTTPException
-from sqlalchemy import func
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -100,7 +98,7 @@ async def fetch(url, cookies):
                 return {"error": f"Failed to fetch data, status: {response.status}"}
 
 
-@app.websocket("/ws/{post_id}")
+@app.websocket("/ws/posts/{post_id}/")
 async def websocket_comments(
     websocket: WebSocket, post_id: int, db: AsyncSession = Depends(get_db)
 ):
@@ -220,7 +218,11 @@ async def websocket_chat(
                 try:
                     query_chat_with_current_user = await db.execute(
                         select(models.DBConversation)
-                        .outerjoin(models.DBConversationMember, models.DBConversationMember.conversation_id == models.DBConversation.id)
+                        .outerjoin(
+                            models.DBConversationMember,
+                            models.DBConversationMember.conversation_id
+                            == models.DBConversation.id,
+                        )
                         .options(selectinload(models.DBConversation.members))
                         .filter(models.DBConversationMember.user_id == current_user.id)
                         .filter(models.DBConversation.id == chat_id)
@@ -230,7 +232,10 @@ async def websocket_chat(
 
                     query_receiver = await db.execute(
                         select(models.DBConversationMember)
-                        .outerjoin(models.DBUser, models.DBConversationMember.user_id == models.DBUser.id)
+                        .outerjoin(
+                            models.DBUser,
+                            models.DBConversationMember.user_id == models.DBUser.id,
+                        )
                         .options(selectinload(models.DBConversationMember.user))
                         .filter(models.DBConversationMember.conversation_id == chat_id)
                         .filter(models.DBUser.id != current_user.id)
