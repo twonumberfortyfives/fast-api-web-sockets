@@ -232,7 +232,7 @@ async def websocket_chat(
                         select(models.DBConversationMember)
                         .outerjoin(models.DBUser, models.DBConversationMember.user_id == models.DBUser.id)
                         .options(selectinload(models.DBConversationMember.user))
-                        .filter(models.DBConversation.id == chat_id)
+                        .filter(models.DBConversationMember.conversation_id == chat_id)
                         .filter(models.DBUser.id != current_user.id)
                         .distinct()
                     )
