@@ -92,28 +92,29 @@ async def send_message_and_create_chat(
 
     query = await db.execute(
         select(models.DBConversation)
-        .join(models.DBConversationMember, models.DBConversation.id == models.DBConversationMember.conversation_id)
-        .where(models.DBConversationMember.user_id.in_([current_user.id, user_id]))
-        .group_by(models.DBConversation.id)
-        .having(func.count(models.DBConversationMember.id) == 2)
+        .join(models.DBConversationMember, models.DBConversationMember.conversation_id == models.DBConversation.id)
+        .options(selectinload(models.DBConversation.members))
+        .where(
+            models.DBConversationMember.user_id == current_user.id
+        )
     )
-    conversation = query.scalars().first()
+    my_conversations = query.scalars().all()
+
+    conversation = next(
+        (conv for conv in my_conversations if any(member.user_id == user_id for member in conv.members)),
+        None
+    )
 
     if conversation is None:
-        new_conversation = models.DBConversation(
-            name=str(uuid.uuid4()),
-        )
+        new_conversation = models.DBConversation(name=str(uuid.uuid4()))
         db.add(new_conversation)
         await db.commit()
         await db.refresh(new_conversation)
 
-        members = [
-            models.DBConversationMember(user_id=current_user.id, conversation_id=new_conversation.id),
-            models.DBConversationMember(user_id=user_id, conversation_id=new_conversation.id)
-        ]
-        db.add_all(members)
+        member1 = models.DBConversationMember(user_id=current_user.id, conversation_id=new_conversation.id)
+        member2 = models.DBConversationMember(user_id=user_id, conversation_id=new_conversation.id)
+        db.add_all([member1, member2])
         await db.commit()
-        await db.refresh(members)
 
         new_message = models.DBMessage(
             sender_id=current_user.id,
@@ -121,7 +122,6 @@ async def send_message_and_create_chat(
             conversation_id=new_conversation.id,
             content=message.content,
         )
-
         db.add(new_message)
         await db.commit()
         await db.refresh(new_message)
@@ -134,7 +134,6 @@ async def send_message_and_create_chat(
         conversation_id=conversation.id,
         content=message.content,
     )
-
     db.add(new_message)
     await db.commit()
     await db.refresh(new_message)
