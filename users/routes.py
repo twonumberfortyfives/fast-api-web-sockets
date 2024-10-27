@@ -32,10 +32,10 @@ async def get_users(db: AsyncSession = Depends(get_db)) -> Page[serializers.User
     return paginate(await views.get_users_view(db=db))
 
 
-@router.get(
-    "/users/{user}"
-)
-async def retrieve_user(user, db: AsyncSession = Depends(get_db)) -> Page[serializers.UserList]:
+@router.get("/users/{user}")
+async def retrieve_user(
+    user, db: AsyncSession = Depends(get_db)
+) -> Page[serializers.UserList]:
     return paginate(await views.retrieve_user_view(db=db, user=user))
 
 
