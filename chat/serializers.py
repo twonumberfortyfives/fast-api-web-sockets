@@ -70,6 +70,7 @@ class ChatList(BaseModel):
     name: str
     username: str
     profile_picture: str
+    last_message: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Config:
@@ -79,6 +80,12 @@ class ChatList(BaseModel):
             .isoformat()
             .replace("+00:00", "Z")
         }
+
+    @model_validator(mode="before")
+    def data_preparation(cls, values):
+        encoded_data_in_bytes = base64.b64decode(values["last_message"].encode("utf-8"))
+        values["last_message"] = cipher.decrypt(encoded_data_in_bytes).decode()
+        return values
 
 
 class MessagesList(BaseModel):

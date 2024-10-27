@@ -61,6 +61,11 @@ async def get_all_chats(request: Request, response: Response, db: AsyncSession):
         .options(
             selectinload(models.DBConversation.members).selectinload(models.DBConversationMember.user)
         )
+        .outerjoin(
+            models.DBMessage,
+            models.DBMessage.conversation_id == models.DBConversation.id,
+        )
+        .options(selectinload(models.DBConversation.messages))
         .filter(models.DBConversationMember.user_id == current_user_id)
         .distinct()
     )
@@ -74,6 +79,10 @@ async def get_all_chats(request: Request, response: Response, db: AsyncSession):
             "username": next(member.user.username for member in chat.members if member.user.id != current_user_id),
             "profile_picture": next(member.user.profile_picture for member in chat.members if member.user.id != current_user_id),
             "created_at": chat.created_at,
+            "last_message": (
+                sorted(chat.messages, key=lambda m: m.created_at, reverse=True)[0].content
+                if chat.messages else None
+            )
         }
         for chat in result
     ]
