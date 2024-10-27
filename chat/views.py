@@ -94,64 +94,72 @@ async def send_message_and_create_chat(
     db: AsyncSession,
 ):
     current_user = await get_current_user(request=request, response=response, db=db)
-    encrypted_message = await encrypt_message(message.content)
-    encoded_data = base64.b64encode(encrypted_message).decode("utf-8")
 
-    query = await db.execute(
-        select(models.DBConversation)
-        .join(
-            models.DBConversationMember,
-            models.DBConversationMember.conversation_id == models.DBConversation.id,
-        )
-        .options(selectinload(models.DBConversation.members))
-        .where(models.DBConversationMember.user_id == current_user.id)
+    query_receiver = await db.execute(
+        select(models.DBUser)
+        .filter(models.DBUser.id == user_id)
     )
-    my_conversations = query.scalars().all()
+    receiver = query_receiver.scalars().first()
+    if receiver:
+        encrypted_message = await encrypt_message(message.content)
+        encoded_data = base64.b64encode(encrypted_message).decode("utf-8")
 
-    conversation = next(
-        (
-            conv
-            for conv in my_conversations
-            if any(member.user_id == user_id for member in conv.members)
-        ),
-        None,
-    )
-
-    if conversation is None:
-        new_conversation = models.DBConversation(name="New Chat")
-        db.add(new_conversation)
-        await db.commit()
-        await db.refresh(new_conversation)
-
-        member1 = models.DBConversationMember(
-            user_id=current_user.id, conversation_id=new_conversation.id
+        query = await db.execute(
+            select(models.DBConversation)
+            .join(
+                models.DBConversationMember,
+                models.DBConversationMember.conversation_id == models.DBConversation.id,
+            )
+            .options(selectinload(models.DBConversation.members))
+            .where(models.DBConversationMember.user_id == current_user.id)
         )
-        member2 = models.DBConversationMember(
-            user_id=user_id, conversation_id=new_conversation.id
+        my_conversations = query.scalars().all()
+
+        conversation = next(
+            (
+                conv
+                for conv in my_conversations
+                if any(member.user_id == user_id for member in conv.members)
+            ),
+            None,
         )
-        db.add_all([member1, member2])
-        await db.commit()
+
+        if conversation is None:
+            new_conversation = models.DBConversation(name="New Chat")
+            db.add(new_conversation)
+            await db.commit()
+            await db.refresh(new_conversation)
+
+            member1 = models.DBConversationMember(
+                user_id=current_user.id, conversation_id=new_conversation.id
+            )
+            member2 = models.DBConversationMember(
+                user_id=user_id, conversation_id=new_conversation.id
+            )
+            db.add_all([member1, member2])
+            await db.commit()
+
+            new_message = models.DBMessage(
+                sender_id=current_user.id,
+                receiver_id=user_id,
+                conversation_id=new_conversation.id,
+                content=encoded_data,
+            )
+            db.add(new_message)
+            await db.commit()
+            await db.refresh(new_message)
+
+            return {"message": "Message has been sent and chat created."}
 
         new_message = models.DBMessage(
             sender_id=current_user.id,
             receiver_id=user_id,
-            conversation_id=new_conversation.id,
+            conversation_id=conversation.id,
             content=encoded_data,
         )
         db.add(new_message)
         await db.commit()
         await db.refresh(new_message)
 
-        return {"message": "Message has been sent and chat created."}
-
-    new_message = models.DBMessage(
-        sender_id=current_user.id,
-        receiver_id=user_id,
-        conversation_id=conversation.id,
-        content=encoded_data,
-    )
-    db.add(new_message)
-    await db.commit()
-    await db.refresh(new_message)
-
-    return {"message": "Message has been sent in existing chat."}
+        return {"message": "Message has been sent in existing chat."}
+    raise HTTPException(detail="User not found", status_code=400)
