@@ -1,6 +1,6 @@
 from typing import Union
 
-from fastapi import Depends, Request, APIRouter, Response, UploadFile, File
+from fastapi import Depends, Request, APIRouter, Response, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from dependencies import get_db

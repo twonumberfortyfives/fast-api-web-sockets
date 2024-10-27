@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 from pydantic import BaseModel, Field, model_validator
 
-from dependencies import decrypt_message, cipher
+from dependencies import cipher
 
 
 class MessageCreate(BaseModel):
@@ -23,7 +23,7 @@ class MessageCreate(BaseModel):
 
     @model_validator(mode="before")  # We are getting here dict
     def data_preparation(cls, values):
-        encoded_data_in_bytes = base64.b64decode(values["content"].encode('utf-8'))
+        encoded_data_in_bytes = base64.b64decode(values["content"].encode("utf-8"))
         values["content"] = cipher.decrypt(encoded_data_in_bytes).decode()
         return values
 
@@ -99,7 +99,7 @@ class MessagesList(BaseModel):
         values.username = values.sender.username
         values.profile_picture = values.sender.profile_picture
 
-        encoded_data_in_bytes = base64.b64decode(values.content.encode('utf-8'))
+        encoded_data_in_bytes = base64.b64decode(values.content.encode("utf-8"))
         values.content = cipher.decrypt(encoded_data_in_bytes).decode()
         return values
 

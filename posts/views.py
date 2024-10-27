@@ -1,7 +1,7 @@
 import uuid
 from typing import Optional
 
-from fastapi import HTTPException, Request, Response, UploadFile, File
+from fastapi import HTTPException, Request, Response, UploadFile
 from passlib.context import CryptContext
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession

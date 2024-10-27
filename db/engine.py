@@ -1,6 +1,5 @@
 import os
 import dotenv
-from sqlalchemy import Table, Column, ForeignKey, Integer
 from sqlmodel import SQLModel
 
 from sqlalchemy.ext.declarative import declarative_base

@@ -1,11 +1,10 @@
-from typing import Optional, List
+from typing import Optional
 
 from pydantic import (
     BaseModel,
     Field,
     EmailStr,
     field_validator,
-    HttpUrl,
     model_validator,
 )
 from datetime import datetime, timezone

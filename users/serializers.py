@@ -1,7 +1,5 @@
 from pydantic import BaseModel, EmailStr, constr, field_validator
 
-from posts.serializers import Post
-
 
 def validate_password(value: str) -> str:
     if len(value) < 8:

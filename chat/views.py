@@ -1,14 +1,11 @@
 import base64
-import uuid
 
-from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from fastapi import Request, Response
 from fastapi.exceptions import HTTPException
-from sqlalchemy.orm import selectinload, aliased
-from sqlalchemy.util import NoneType
+from sqlalchemy.orm import selectinload
 
 from chat import serializers
 from db import models
@@ -98,7 +95,7 @@ async def send_message_and_create_chat(
 ):
     current_user = await get_current_user(request=request, response=response, db=db)
     encrypted_message = await encrypt_message(message.content)
-    encoded_data = base64.b64encode(encrypted_message).decode('utf-8')
+    encoded_data = base64.b64encode(encrypted_message).decode("utf-8")
 
     query = await db.execute(
         select(models.DBConversation)

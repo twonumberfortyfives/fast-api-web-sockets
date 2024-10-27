@@ -30,7 +30,7 @@ from posts.routes import router as posts_router
 from chat.routes import router as chat_router
 from comments.routes import router as comment_router
 from comments.serializers import CommentCreate
-from dependencies import decrypt_message, encrypt_message
+from dependencies import encrypt_message
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -246,7 +246,9 @@ async def websocket_chat(
                     receiver = query_receiver.scalars().first()
 
                     encrypted_data = await encrypt_message(data)
-                    encoded_data = base64.b64encode(encrypted_data).decode('utf-8')  # change it to string
+                    encoded_data = base64.b64encode(encrypted_data).decode(
+                        "utf-8"
+                    )  # change it to string
 
                     comment = models.DBMessage(
                         sender_id=current_user.id,

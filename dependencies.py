@@ -16,7 +16,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_TIME_MINUTES = timedelta(minutes=1)
 REFRESH_TOKEN_EXPIRE_TIME_DAYS = timedelta(days=30)
-cipher = Fernet(os.getenv('ENCRYPTION_KEY'))
+cipher = Fernet(os.getenv("ENCRYPTION_KEY"))
 
 
 async def get_db() -> AsyncSession:

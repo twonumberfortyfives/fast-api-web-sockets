@@ -1,7 +1,6 @@
 import os
 import uuid
 
-import aioredis
 from fastapi import HTTPException, UploadFile
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
