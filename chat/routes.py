@@ -9,16 +9,16 @@ from dependencies import get_db
 router = APIRouter()
 
 
-@router.get("/chats/{chat_id}/")
+@router.get("/chats/{user_id}/")
 async def get_all_messages(
-    chat_id: int,
+    user_id: int,
     request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db),
 ) -> Page[serializers.MessagesList]:
     return paginate(
         await views.get_chat_history(
-            chat_id=chat_id, request=request, response=response, db=db
+            user_id=user_id, request=request, response=response, db=db
         )
     )
 

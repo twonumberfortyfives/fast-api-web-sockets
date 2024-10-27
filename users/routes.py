@@ -27,9 +27,9 @@ async def get_admin_end_point(
     return {"message": "Welcome admin!"}
 
 
-@router.get("/users", response_model=list[serializers.UserList])
-async def get_users(db: AsyncSession = Depends(get_db)):
-    return await views.get_users_view(db=db)
+@router.get("/users")
+async def get_users(db: AsyncSession = Depends(get_db)) -> Page[serializers.UserList]:
+    return paginate(await views.get_users_view(db=db))
 
 
 @router.get(

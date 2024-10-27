@@ -13,31 +13,34 @@ from dependencies import get_current_user, encrypt_message
 
 
 async def get_chat_history(
-    chat_id: int, request: Request, response: Response, db: AsyncSession
+    user_id: int, request: Request, response: Response, db: AsyncSession
 ):
     current_user = await get_current_user(request=request, response=response, db=db)
-    result = await db.execute(
-        select(models.DBMessage)
-        .join(
-            models.DBConversation,
-            models.DBMessage.conversation_id == models.DBConversation.id,
-        )
-        .join(
-            models.DBConversationMember,
-            models.DBConversationMember.conversation_id == models.DBConversation.id,
-        )
-        .options(selectinload(models.DBMessage.sender))
-        .filter(models.DBConversation.id == chat_id)
-        .filter(models.DBConversationMember.user_id == current_user.id)
-        .order_by(models.DBMessage.created_at)
+    query_receiver = await db.execute(
+        select(models.DBUser)
+        .filter(models.DBUser.id == user_id)
     )
+    receiver = query_receiver.scalars().first()
 
-    chat = result.scalars().all()
+    if receiver:
+        result = await db.execute(
+            select(models.DBMessage)
+            .join(
+                models.DBUser,
+                models.DBUser.id == models.DBMessage.sender_id,
+            )
+            .options(selectinload(models.DBMessage.sender))
+            .filter(models.DBMessage.sender_id == current_user.id)
+            .filter(models.DBMessage.receiver_id == receiver.id)
+            .order_by(models.DBMessage.created_at)
+        )
 
-    if chat:
-        return chat
+        all_messages = result.scalars().all()
 
-    raise HTTPException(status_code=400, detail="No chats found.")
+        if all_messages:
+            return all_messages
+
+    raise HTTPException(status_code=400, detail="No chat/user found.")
 
 
 async def get_all_chats(request: Request, response: Response, db: AsyncSession):
@@ -51,12 +54,30 @@ async def get_all_chats(request: Request, response: Response, db: AsyncSession):
             models.DBConversationMember,
             models.DBConversationMember.conversation_id == models.DBConversation.id,
         )
-        .options(selectinload(models.DBConversation.members))
+        .outerjoin(
+            models.DBUser,
+            models.DBConversationMember.user_id == models.DBUser.id,
+        )
+        .options(
+            selectinload(models.DBConversation.members).selectinload(models.DBConversationMember.user)
+        )
         .filter(models.DBConversationMember.user_id == current_user_id)
         .distinct()
     )
 
-    all_chats = query.scalars().all()
+    result = query.scalars().all()
+
+    all_chats = [
+        {
+            "id": chat.id,
+            "name": chat.name,
+            "username": next(member.user.username for member in chat.members if member.user.id != current_user_id),
+            "profile_picture": next(member.user.profile_picture for member in chat.members if member.user.id != current_user_id),
+            "created_at": chat.created_at,
+        }
+        for chat in result
+    ]
+
     if all_chats:
         return all_chats
     raise HTTPException(status_code=400, detail="No chats found.")
