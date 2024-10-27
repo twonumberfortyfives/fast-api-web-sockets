@@ -45,7 +45,7 @@ async def retrieve_user_view(db: AsyncSession, user):
         result = await db.execute(
             select(models.DBUser).filter(models.DBUser.id == user)
         )
-        user = result.scalar()
+        user = result.scalars().all()
     if isinstance(user, str):
         result = await db.execute(
             select(models.DBUser).filter(models.DBUser.username.ilike(f"%{user}%"))

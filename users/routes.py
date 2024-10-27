@@ -33,10 +33,10 @@ async def get_users(db: AsyncSession = Depends(get_db)) -> Page[serializers.User
 
 
 @router.get(
-    "/users/{user}", response_model=serializers.UserList | list[serializers.UserList]
+    "/users/{user}"
 )
-async def retrieve_user(user, db: AsyncSession = Depends(get_db)):
-    return await views.retrieve_user_view(db=db, user=user)
+async def retrieve_user(user, db: AsyncSession = Depends(get_db)) -> Page[serializers.UserList]:
+    return paginate(await views.retrieve_user_view(db=db, user=user))
 
 
 @router.get("/users/{user_id}/posts/")
