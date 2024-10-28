@@ -174,7 +174,7 @@ async def create_post_view(
                 await f.write(await file.read())
 
             file_record = models.DBFile(
-                link=f"http://127.0.0.1:8000/{image_path}", post_id=new_post.id
+                link=f"http://127.0.0.1:8000/{image_path}", post_id=new_post.id  # TODO: Change it to new domain before deployment
             )
             db.add(file_record)
             list_of_file_records.append(file_record)

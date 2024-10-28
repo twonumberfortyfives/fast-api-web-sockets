@@ -29,9 +29,15 @@ async def get_chat_history(
                 models.DBUser.id == models.DBMessage.sender_id,
             )
             .options(selectinload(models.DBMessage.sender))
+            .outerjoin(
+                models.DBFileMessage,
+                models.DBFileMessage.message_id == models.DBMessage.id,
+            )
+            .options(selectinload(models.DBMessage.files))
             .filter(models.DBMessage.sender_id == current_user.id)
             .filter(models.DBMessage.receiver_id == receiver.id)
             .order_by(models.DBMessage.created_at)
+            .distinct()
         )
 
         all_messages = result.scalars().all()

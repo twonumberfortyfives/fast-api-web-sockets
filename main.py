@@ -1,7 +1,9 @@
 import base64
 import os
 import re
+import uuid
 
+import aiofiles
 import aiohttp
 import jwt
 from fastapi import (
@@ -102,7 +104,7 @@ async def fetch(url, cookies):
 
 @app.websocket("/ws/posts/{post_id}/")
 async def websocket_comments(
-    websocket: WebSocket, post_id: int, db: AsyncSession = Depends(get_db)
+        websocket: WebSocket, post_id: int, db: AsyncSession = Depends(get_db)
 ):
     await manager.connect(websocket, post_id, "post")
     while True:
@@ -158,7 +160,7 @@ async def websocket_comments(
 
         except (jwt.ExpiredSignatureError, jwt.exceptions.ExpiredSignatureError):
             # Refresh the token logic
-            url = "http://localhost:8000/api/is-authenticated/"
+            url = "http://localhost:8000/api/is-authenticated/"  # TODO: Change it to new domain before deployment
             response = await fetch(url, websocket.cookies)
             set_cookie_header = response.headers.get("Set-Cookie")
 
@@ -187,9 +189,9 @@ async def websocket_comments(
 
 @app.websocket("/ws/chats/{chat_id}/")
 async def websocket_chat(
-    websocket: WebSocket,
-    chat_id: int,
-    db: AsyncSession = Depends(get_db),
+        websocket: WebSocket,
+        chat_id: int,
+        db: AsyncSession = Depends(get_db),
 ):
     await manager.connect(websocket, chat_id, "chat")
     user_email = None
@@ -245,28 +247,58 @@ async def websocket_chat(
                     )
                     receiver = query_receiver.scalars().first()
 
-                    encrypted_data = await encrypt_message(data)
+                    encrypted_data = await encrypt_message(data["content"])
                     encoded_data = base64.b64encode(encrypted_data).decode(
                         "utf-8"
                     )  # change it to string
 
-                    comment = models.DBMessage(
+                    message = models.DBMessage(
                         sender_id=current_user.id,
                         receiver_id=receiver.user.id,
                         conversation_id=current_chat.id,
                         content=encoded_data,
                     )
 
-                    db.add(comment)
+                    db.add(message)
                     await db.commit()
-                    await db.refresh(comment)
+                    await db.refresh(message)
+
+                    array_with_file_links = []
+
+                    file_data_list = data.get("files", None)
+                    if file_data_list:
+                        for file_data in file_data_list:
+                            file_name = file_data.get('name')
+                            binary_data = file_data.get('data')
+
+                            if isinstance(binary_data, list):
+                                file_bytes = bytes(binary_data)
+                            else:
+                                file_bytes = binary_data  # Assuming this is already in bytes
+
+                            print(f"File Name: {file_name}, File Bytes Length: {len(file_bytes)}")
+
+                            file_path = f"uploads/{uuid.uuid4()}_{file_name}"
+
+                            async with aiofiles.open(file_path, "wb") as f:
+                                await f.write(file_bytes)
+
+                            new_file = models.DBFileMessage(
+                                message_id=message.id,
+                                link=f"http://127.0.0.1:8000/{file_path}"
+                            )
+                            db.add(new_file)
+                            array_with_file_links.append(new_file)
+                            print(f"Successfully wrote file: {file_path}")
+                    await db.commit()
 
                     message_serializer = MessageCreate(
                         sender_id=current_user.id,
                         receiver_id=receiver.user.id,
                         conversation_id=current_chat.id,
-                        content=comment.content,
-                        created_at=comment.created_at,
+                        content=message.content,
+                        created_at=message.created_at,
+                        files=[file.link for file in array_with_file_links],
                     )
 
                 except Exception as e:
@@ -284,7 +316,7 @@ async def websocket_chat(
                     break
 
         except (jwt.ExpiredSignatureError, jwt.exceptions.ExpiredSignatureError):
-            url = "http://localhost:8000/api/is-authenticated/"
+            url = "http://localhost:8000/api/is-authenticated/"  # TODO: Change it to new domain before deployment
             response = await fetch(url, websocket.cookies)
             set_cookie_header = response.headers.get("Set-Cookie")
 

@@ -1,6 +1,7 @@
 import base64
 from datetime import datetime, timezone
 
+from cryptography.fernet import InvalidToken
 from pydantic import BaseModel, Field, model_validator
 
 from dependencies import cipher
@@ -11,6 +12,7 @@ class MessageCreate(BaseModel):
     receiver_id: int
     conversation_id: int
     content: str
+    files: list[str]
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Config:
@@ -23,8 +25,11 @@ class MessageCreate(BaseModel):
 
     @model_validator(mode="before")  # We are getting here dict
     def data_preparation(cls, values):
-        encoded_data_in_bytes = base64.b64decode(values["content"].encode("utf-8"))
-        values["content"] = cipher.decrypt(encoded_data_in_bytes).decode()
+        try:
+            encoded_data_in_bytes = base64.b64decode(values["content"].encode("utf-8"))
+            values["content"] = cipher.decrypt(encoded_data_in_bytes).decode()
+        except (base64.binascii.Error, InvalidToken) as e:
+            raise ValueError("Failed to decode or decrypt content") from e
         return values
 
 
@@ -83,9 +88,18 @@ class ChatList(BaseModel):
 
     @model_validator(mode="before")
     def data_preparation(cls, values):
-        encoded_data_in_bytes = base64.b64decode(values["last_message"].encode("utf-8"))
-        values["last_message"] = cipher.decrypt(encoded_data_in_bytes).decode()
+        try:
+            encoded_data_in_bytes = base64.b64decode(values["last_message"].encode("utf-8"))
+            values["last_message"] = cipher.decrypt(encoded_data_in_bytes).decode()
+        except (base64.binascii.Error, InvalidToken) as e:
+            raise ValueError("Failed to decode or decrypt content") from e
         return values
+
+
+class MessageFile(BaseModel):
+    id: int
+    link: str
+    message_id: int
 
 
 class MessagesList(BaseModel):
@@ -94,6 +108,7 @@ class MessagesList(BaseModel):
     content: str
     username: str
     profile_picture: str
+    files: list[MessageFile] = []
 
     class Config:
         from_attributes = True
@@ -108,8 +123,12 @@ class MessagesList(BaseModel):
         values.username = values.sender.username
         values.profile_picture = values.sender.profile_picture
 
-        encoded_data_in_bytes = base64.b64decode(values.content.encode("utf-8"))
-        values.content = cipher.decrypt(encoded_data_in_bytes).decode()
+        try:
+            encoded_data_in_bytes = base64.b64decode(values.content.encode("utf-8"))
+            values.content = cipher.decrypt(encoded_data_in_bytes).decode()
+        except (base64.binascii.Error, InvalidToken) as e:
+            raise ValueError("Failed to decode or decrypt content") from e
+
         return values
 
 

@@ -220,7 +220,7 @@ async def my_profile_edit_view(
         if (
             found_user.profile_picture
             and found_user.profile_picture
-            != "http://127.0.0.1:8000/uploads/default.jpg"
+            != "http://127.0.0.1:8000/uploads/default.jpg"  # TODO: Change it to new domain before deployment
         ):
             old_image_path = found_user.profile_picture.split("/")[
                 -1
@@ -232,7 +232,7 @@ async def my_profile_edit_view(
                 os.remove(old_image_full_path)
 
         # Store the URL for accessing the image
-        found_user.profile_picture = f"http://127.0.0.1:8000/{image_path}"
+        found_user.profile_picture = f"http://127.0.0.1:8000/{image_path}" # TODO: Change it to new domain before deployment
 
     # Commit changes to the database
     try:

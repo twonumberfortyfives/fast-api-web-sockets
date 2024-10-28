@@ -21,6 +21,7 @@ class Role(PyEnum):
 
 class DBFile(Base):
     __tablename__ = "files"
+
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     link = Column(String)
     post_id = Column(
@@ -30,6 +31,18 @@ class DBFile(Base):
     post = relationship("DBPost", back_populates="files")
 
 
+class DBFileMessage(Base):
+    __tablename__ = "files_messages"
+
+    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    link = Column(String)
+    message_id = Column(
+        Integer, ForeignKey("messages.id", ondelete="CASCADE"), nullable=False
+    )
+
+    message = relationship("DBMessage", back_populates="files")
+
+
 class DBUser(Base):
     __tablename__ = "users"
 
@@ -37,7 +50,7 @@ class DBUser(Base):
     email = Column(String, unique=True, nullable=False)
     username = Column(String(30), unique=True, nullable=False)
     profile_picture = Column(
-        String, default="http://127.0.0.1:8000/uploads/default.jpg"
+        String, default="http://127.0.0.1:8000/uploads/default.jpg"  # TODO: change domain before deployment
     )
     password = Column(String, nullable=False)
     bio = Column(String(500), nullable=True)
@@ -201,5 +214,8 @@ class DBMessage(Base):
     )
     receiver = relationship(
         "DBUser", foreign_keys=[receiver_id], back_populates="messages_received"
+    )
+    files = relationship(
+        "DBFileMessage", back_populates="message", cascade="all, delete-orphan"
     )
     conversation = relationship("DBConversation", back_populates="messages")

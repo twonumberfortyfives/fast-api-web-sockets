@@ -19,6 +19,7 @@ services:
       - postgres
     volumes:
       - ./alembic/versions:/app/alembic/versions
+      - ./uploads:/app/uploads
 
   postgres:
     image: postgres:14-alpine
