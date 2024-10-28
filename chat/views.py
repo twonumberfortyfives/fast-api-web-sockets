@@ -82,6 +82,11 @@ async def get_all_chats(request: Request, response: Response, db: AsyncSession):
     all_chats = [
         {
             "id": chat.id,
+            "user_id": next(
+                member.user.id
+                for member in chat.members
+                if member.user.id != current_user_id
+            ),
             "name": chat.name,
             "username": next(
                 member.user.username

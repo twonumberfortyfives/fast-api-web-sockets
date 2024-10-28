@@ -72,6 +72,7 @@ class Chat(BaseModel):
 
 class ChatList(BaseModel):
     id: int
+    user_id: int
     name: str
     username: str
     profile_picture: str
