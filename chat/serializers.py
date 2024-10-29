@@ -74,8 +74,8 @@ class Chat(BaseModel):
 
 class ChatList(BaseModel):
     id: int
-    user_id: int
     name: str
+    user_id: int
     username: str
     profile_picture: str
     last_message: str | None = None
@@ -110,6 +110,7 @@ class MessageFile(BaseModel):
 
 class MessagesList(BaseModel):
     id: int
+    conversation_id: int
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     user_id: int
     content: str
