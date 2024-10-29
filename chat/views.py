@@ -100,9 +100,7 @@ async def get_all_chats(request: Request, response: Response, db: AsyncSession):
             ),
             "created_at": chat.created_at,
             "last_message": (
-                sorted(chat.messages, key=lambda m: m.created_at, reverse=True)[
-                    0
-                ].content
+                sorted(chat.messages, key=lambda m: m.created_at, reverse=True)[0].content
                 if chat.messages
                 else None
             ),
@@ -216,3 +214,60 @@ async def send_message_and_create_chat(
             return {"message": "Message has been sent in existing chat."}
         raise HTTPException(detail="User not found", status_code=400)
     raise HTTPException(detail="You can not send message to yourself.", status_code=400)
+
+
+async def delete_message_view(
+        message_id: int,
+        request: Request,
+        response: Response,
+        db: AsyncSession
+):
+    current_user = await get_current_user(request=request, response=response, db=db)
+    query = await db.execute(
+        select(models.DBMessage)
+        .filter(models.DBMessage.sender_id == current_user.id)
+        .filter(models.DBMessage.id == message_id)
+    )
+    current_user_message = query.scalars().first()
+
+    if current_user_message:
+        await db.delete(current_user_message)
+        await db.commit()
+        return {"message": "Message has been deleted."}
+    raise HTTPException(status_code=400, detail="No messages found.")
+
+
+async def edit_message_view(
+        message_id: int,
+        content: str,
+        request: Request,
+        response: Response,
+        db: AsyncSession,
+):
+    current_user = await get_current_user(request=request, response=response, db=db)
+    query = await db.execute(
+        select(models.DBMessage)
+        .join(
+            models.DBUser,
+            models.DBUser.id == models.DBMessage.sender_id,
+        )
+        .options(selectinload(models.DBMessage.sender))
+        .outerjoin(
+            models.DBFileMessage,
+            models.DBFileMessage.message_id == models.DBMessage.id,
+        )
+        .options(selectinload(models.DBMessage.files))
+        .filter(models.DBMessage.sender_id == current_user.id)
+        .filter(models.DBMessage.id == message_id)
+        .distinct()
+    )
+
+    current_user_message = query.scalars().first()
+    if content and current_user_message:
+        encrypted_message = await encrypt_message(content)
+        encoded_data = base64.b64encode(encrypted_message).decode("utf-8")
+        current_user_message.content = encoded_data
+        await db.commit()
+        await db.refresh(current_user_message)
+        return current_user_message
+    raise HTTPException(status_code=400, detail="Message not found.")

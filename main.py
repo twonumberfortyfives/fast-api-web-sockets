@@ -102,7 +102,7 @@ async def fetch(url, cookies):
                 return {"error": f"Failed to fetch data, status: {response.status}"}
 
 
-@app.websocket("/ws/posts/{post_id}/")
+@app.websocket("/ws/posts/{post_id}")
 async def websocket_comments(
         websocket: WebSocket, post_id: int, db: AsyncSession = Depends(get_db)
 ):
@@ -187,7 +187,7 @@ async def websocket_comments(
             raise HTTPException(status_code=400, detail=str(e))
 
 
-@app.websocket("/ws/chats/{chat_id}/")
+@app.websocket("/ws/chats/{chat_id}")
 async def websocket_chat(
         websocket: WebSocket,
         chat_id: int,
@@ -217,8 +217,7 @@ async def websocket_chat(
             current_user = current_user_payload.scalars().first()
 
             data = await websocket.receive_json()
-
-            if not data["content"] == "" and not data["files"]:
+            if data.get("content") or data.get("files"):
                 try:
                     query_chat_with_current_user = await db.execute(
                         select(models.DBConversation)
@@ -285,7 +284,7 @@ async def websocket_chat(
 
                             new_file = models.DBFileMessage(
                                 message_id=message.id,
-                                link=f"http://127.0.0.1:8000/{file_path}"
+                                link=f"http://127.0.0.1:8000/{file_path}"  # TODO: change before deploy
                             )
                             db.add(new_file)
                             array_with_file_links.append(new_file)

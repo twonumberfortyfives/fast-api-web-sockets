@@ -39,7 +39,7 @@ async def retrieve_user(
     return paginate(await views.retrieve_user_view(db=db, user=user))
 
 
-@router.get("/users/{user_id}/posts/")
+@router.get("/users/{user_id}/posts")
 async def retrieve_users_posts(
     user_id: int,
     request: Request,

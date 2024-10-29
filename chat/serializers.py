@@ -76,7 +76,7 @@ class ChatList(BaseModel):
     name: str
     username: str
     profile_picture: str
-    last_message: str
+    last_message: str | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Config:
@@ -88,12 +88,15 @@ class ChatList(BaseModel):
         }
 
     @model_validator(mode="before")
-    def data_preparation(cls, values):
+    def decode_and_decrypt_last_message(cls, values):
+        last_message = values.get("last_message")
+        if not last_message:
+            return values
         try:
-            encoded_data_in_bytes = base64.b64decode(values["last_message"].encode("utf-8"))
+            encoded_data_in_bytes = base64.b64decode(last_message.encode("utf-8"))
             values["last_message"] = cipher.decrypt(encoded_data_in_bytes).decode()
-        except (base64.binascii.Error, InvalidToken) as e:
-            raise ValueError("Failed to decode or decrypt content") from e
+        except (base64.binascii.Error, InvalidToken):
+            values["last_message"] = None
         return values
 
 

@@ -36,7 +36,7 @@ async def retrieve_post(
     )
 
 
-@router.post("/posts/{post_id}/like/", response_model=serializers.Like)
+@router.post("/posts/{post_id}/like", response_model=serializers.Like)
 async def like_the_post(
     post_id: int,
     request: Request,
@@ -48,7 +48,7 @@ async def like_the_post(
     )
 
 
-@router.delete("/posts/{post_id}/like/")
+@router.delete("/posts/{post_id}/like")
 async def unlike_the_post(
     post_id: int,
     request: Request,
