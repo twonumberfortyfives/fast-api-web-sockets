@@ -218,7 +218,7 @@ async def websocket_chat(
 
             data = await websocket.receive_json()
 
-            if data:
+            if not data["content"] == "" and not data["files"]:
                 try:
                     query_chat_with_current_user = await db.execute(
                         select(models.DBConversation)
