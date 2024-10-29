@@ -1,5 +1,6 @@
 import base64
 
+from sqlalchemy import or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -34,8 +35,14 @@ async def get_chat_history(
                 models.DBFileMessage.message_id == models.DBMessage.id,
             )
             .options(selectinload(models.DBMessage.files))
-            .filter(models.DBMessage.sender_id == current_user.id)
-            .filter(models.DBMessage.receiver_id == receiver.id)
+            .filter(
+                or_(
+                    # Messages where current user is the sender and receiver is the recipient
+                    (models.DBMessage.sender_id == current_user.id) & (models.DBMessage.receiver_id == receiver.id),
+                    # Messages where receiver is the sender and current user is the recipient
+                    (models.DBMessage.sender_id == receiver.id) & (models.DBMessage.receiver_id == current_user.id)
+                )
+            )
             .order_by(models.DBMessage.created_at)
             .distinct()
         )

@@ -293,6 +293,8 @@ async def websocket_chat(
 
                     message_serializer = MessageCreate(
                         sender_id=current_user.id,
+                        username=current_user.username,
+                        profile_picture=current_user.profile_picture,
                         receiver_id=receiver.user.id,
                         conversation_id=current_chat.id,
                         content=message.content,

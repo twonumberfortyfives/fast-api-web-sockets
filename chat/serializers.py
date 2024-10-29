@@ -9,6 +9,8 @@ from dependencies import cipher
 
 class MessageCreate(BaseModel):
     sender_id: int
+    username: str
+    profile_picture: str
     receiver_id: int
     conversation_id: int
     content: str
@@ -109,6 +111,7 @@ class MessageFile(BaseModel):
 class MessagesList(BaseModel):
     id: int
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    user_id: int
     content: str
     username: str
     profile_picture: str
@@ -125,6 +128,7 @@ class MessagesList(BaseModel):
     @model_validator(mode="before")
     def data_preparation(cls, values):
         values.username = values.sender.username
+        values.user_id = values.sender.id
         values.profile_picture = values.sender.profile_picture
 
         try:
