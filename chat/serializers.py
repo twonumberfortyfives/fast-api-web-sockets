@@ -8,14 +8,14 @@ from dependencies import cipher
 
 
 class MessageCreate(BaseModel):
-    sender_id: int
+    id: int
+    conversation_id: int
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    user_id: int
+    content: str
     username: str
     profile_picture: str
-    receiver_id: int
-    conversation_id: int
-    content: str
     files: list[str]
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Config:
         from_attributes = True
