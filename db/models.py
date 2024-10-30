@@ -67,12 +67,12 @@ class DBUser(Base):
         "DBComment", back_populates="user", cascade="all, delete-orphan"
     )
 
-    conversations = relationship("DBConversationMember", back_populates="user")
+    conversations = relationship("DBConversationMember", back_populates="user", cascade="all, delete-orphan")
     messages_sent = relationship(
-        "DBMessage", back_populates="sender", foreign_keys="DBMessage.sender_id"
+        "DBMessage", back_populates="sender", foreign_keys="DBMessage.sender_id", cascade="all, delete-orphan"
     )
     messages_received = relationship(
-        "DBMessage", back_populates="receiver", foreign_keys="DBMessage.receiver_id"
+        "DBMessage", back_populates="receiver", foreign_keys="DBMessage.receiver_id", cascade="all, delete-orphan"
     )
 
 

@@ -44,7 +44,7 @@ async def delete_chat(
     )
 
 
-@router.post("/chats/{user_id}/send-message")
+@router.post("/chats/{user_id}/send-message", response_model=serializers.MessagesList)
 async def send_message_and_create_chat(
     request: Request,
     response: Response,

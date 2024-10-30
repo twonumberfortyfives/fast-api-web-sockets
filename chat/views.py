@@ -181,6 +181,13 @@ async def send_message_and_create_chat(
                 None,
             )
 
+            new_message = models.DBMessage(
+                sender_id=current_user.id,
+                receiver_id=user_id,
+                conversation_id=conversation.id,
+                content=encoded_data,
+            )
+
             if conversation is None:
                 new_conversation = models.DBConversation(name="New Chat")
                 db.add(new_conversation)
@@ -202,23 +209,27 @@ async def send_message_and_create_chat(
                     conversation_id=new_conversation.id,
                     content=encoded_data,
                 )
-                db.add(new_message)
-                await db.commit()
-                await db.refresh(new_message)
 
-                return {"message": "Message has been sent and chat created."}
-
-            new_message = models.DBMessage(
-                sender_id=current_user.id,
-                receiver_id=user_id,
-                conversation_id=conversation.id,
-                content=encoded_data,
-            )
             db.add(new_message)
             await db.commit()
             await db.refresh(new_message)
 
-            return {"message": "Message has been sent in existing chat."}
+            query_new_message = await db.execute(
+                select(models.DBMessage)
+                .join(
+                    models.DBUser,
+                    models.DBUser.id == models.DBMessage.sender_id,
+                )
+                .options(selectinload(models.DBMessage.sender))
+                .outerjoin(
+                    models.DBFileMessage,
+                    models.DBFileMessage.message_id == models.DBMessage.id,
+                )
+                .options(selectinload(models.DBMessage.files))
+                .filter(models.DBMessage.id == new_message.id)
+            )
+            full_info_new_message = query_new_message.scalars().first()
+            return full_info_new_message
         raise HTTPException(detail="User not found", status_code=400)
     raise HTTPException(detail="You can not send message to yourself.", status_code=400)
 
