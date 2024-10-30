@@ -282,9 +282,14 @@ async def websocket_chat(
                             async with aiofiles.open(file_path, "wb") as f:
                                 await f.write(file_bytes)
 
+                            encrypted_data = await encrypt_message(f"http://127.0.0.1:8000/{file_path}")
+                            encoded_data = base64.b64encode(encrypted_data).decode(
+                                "utf-8"
+                            )
+
                             new_file = models.DBFileMessage(
                                 message_id=message.id,
-                                link=f"http://127.0.0.1:8000/{file_path}"  # TODO: change before deploy
+                                link=encoded_data  # TODO: change before deploy
                             )
                             db.add(new_file)
                             array_with_file_links.append(new_file)

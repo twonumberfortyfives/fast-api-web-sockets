@@ -3,6 +3,7 @@ import uuid
 
 from fastapi import HTTPException, UploadFile
 from passlib.context import CryptContext
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from fastapi import Response, Request
@@ -297,8 +298,19 @@ async def delete_my_account_view(
     user = await get_current_user(request=request, response=response, db=db)
 
     if await verify_password(password_confirm.password, user.password):
+        participated_chats = await db.execute(
+            select(models.DBConversation)
+            .join(models.DBConversationMember)
+            .filter(models.DBConversationMember.user_id == user.id)
+            .options(selectinload(models.DBConversation.members))
+        )
+
+        for chat in participated_chats.scalars().all():
+            await db.delete(chat)
+
         await db.delete(user)
         await db.commit()
+
         response.delete_cookie(key="access_token")
         response.delete_cookie(key="refresh_token")
         return True
