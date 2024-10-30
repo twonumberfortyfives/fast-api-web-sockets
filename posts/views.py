@@ -58,66 +58,47 @@ async def get_all_posts_view(request: Request, response: Response, db: AsyncSess
 async def retrieve_post_view(
     post, request: Request, response: Response, db: AsyncSession
 ):
-    if post.isdigit():
-        post = int(post)
+    query = (
+        select(models.DBPost)
+        .outerjoin(models.DBUser, models.DBPost.user_id == models.DBUser.id)
+        .options(selectinload(models.DBPost.user))
+        .outerjoin(models.DBPostLike, models.DBPost.id == models.DBPostLike.post_id)
+        .options(selectinload(models.DBPost.likes))
+        .outerjoin(models.DBComment, models.DBPost.id == models.DBComment.post_id)
+        .options(selectinload(models.DBPost.comments))
+        .outerjoin(models.DBFile, models.DBPost.id == models.DBFile.post_id)
+        .options(selectinload(models.DBPost.files))
+    )
+
+    # Handle case when post is a digit (ID)
+    if isinstance(post, str) and post.isdigit():
+        post_id = int(post)
         result = await db.execute(
-            select(models.DBPost)
-            .outerjoin(models.DBUser, models.DBPost.user_id == models.DBUser.id)
-            .options(selectinload(models.DBPost.user))
-            .outerjoin(models.DBPostLike, models.DBPost.id == models.DBPostLike.post_id)
-            .options(selectinload(models.DBPost.likes))
-            .outerjoin(models.DBComment, models.DBPost.id == models.DBComment.post_id)
-            .options(selectinload(models.DBPost.comments))
-            .outerjoin(models.DBFile, models.DBPost.id == models.DBFile.post_id)
-            .options(selectinload(models.DBPost.files))
-            .filter(models.DBPost.id == post)
-            .distinct()
-            .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
+            query.filter(models.DBPost.id == post_id).distinct().order_by(models.DBPost.id.desc())
         )
         posts = result.scalars().all()
-        try:
-            current_user_id = (
-                await get_current_user(request=request, response=response, db=db)
-            ).id
 
-            posts_with_full_info = await get_posts_with_full_info(
-                posts=posts, current_user_id=current_user_id
+    elif isinstance(post, str):
+        if post.startswith("#"):
+            result = await db.execute(
+                query.filter(models.DBPost._tags.ilike(f"%{post.lstrip('#')}%")).distinct().order_by(models.DBPost.id.desc())
             )
-            return posts_with_full_info
-        except HTTPException as e:
-            if e.status_code == 401:
-                return posts
-        raise HTTPException(status_code=404, detail="No posts found")
-
-    if isinstance(post, str):
-        result = await db.execute(
-            select(models.DBPost)
-            .outerjoin(models.DBUser, models.DBPost.user_id == models.DBUser.id)
-            .options(selectinload(models.DBPost.user))
-            .outerjoin(models.DBPostLike, models.DBPost.id == models.DBPostLike.post_id)
-            .options(selectinload(models.DBPost.likes))
-            .outerjoin(models.DBComment, models.DBPost.id == models.DBComment.post_id)
-            .options(selectinload(models.DBPost.comments))
-            .outerjoin(models.DBFile, models.DBPost.id == models.DBFile.post_id)
-            .options(selectinload(models.DBPost.files))
-            .filter(models.DBPost.topic.ilike(f"%{post}%"))
-            .distinct()
-            .order_by(models.DBPost.id.desc())  # Sort by ID in descending order
-        )
+        else:
+            result = await db.execute(
+                query.filter(models.DBPost.topic.ilike(f"%{post}%")).distinct().order_by(models.DBPost.id.desc())
+            )
         posts = result.scalars().all()
-        try:
-            current_user_id = (
-                await get_current_user(request=request, response=response, db=db)
-            ).id
-            posts_with_full_info = await get_posts_with_full_info(
-                posts=posts, current_user_id=current_user_id
-            )
-            return posts_with_full_info
-        except HTTPException as e:
-            if e.status_code == 401:
-                return posts
+    else:
         raise HTTPException(status_code=404, detail="No post found")
-    raise HTTPException(status_code=404, detail="No post found")
+
+    try:
+        current_user_id = (await get_current_user(request=request, response=response, db=db)).id
+        return await get_posts_with_full_info(posts=posts, current_user_id=current_user_id)
+    except HTTPException as e:
+        if e.status_code == 401:
+            return posts
+
+    raise HTTPException(status_code=404, detail="No posts found")
 
 
 async def create_post_view(
