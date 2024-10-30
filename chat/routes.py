@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Request, Response
+from fastapi_limiter.depends import RateLimiter
 from fastapi_pagination import Page, paginate
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,7 +10,10 @@ from dependencies import get_db
 router = APIRouter()
 
 
-@router.get("/chats/{user_id}")
+@router.get(
+    "/chats/{user_id}",
+    dependencies=[Depends(RateLimiter(times=30, seconds=60))],
+)
 async def get_all_messages(
     user_id: int,
     request: Request,
@@ -23,7 +27,10 @@ async def get_all_messages(
     )
 
 
-@router.get("/chats")
+@router.get(
+    "/chats",
+    dependencies=[Depends(RateLimiter(times=30, seconds=60))],
+)
 async def get_all_chats(
     request: Request, response: Response, db: AsyncSession = Depends(get_db)
 ) -> Page[serializers.ChatList]:
@@ -32,7 +39,10 @@ async def get_all_chats(
     )
 
 
-@router.delete("/chats/{chat_id}")
+@router.delete(
+    "/chats/{chat_id}",
+    dependencies=[Depends(RateLimiter(times=30, seconds=60))],
+)
 async def delete_chat(
     request: Request,
     response: Response,
@@ -44,7 +54,11 @@ async def delete_chat(
     )
 
 
-@router.post("/chats/{user_id}/send-message", response_model=serializers.MessagesList)
+@router.post(
+    "/chats/{user_id}/send-message",
+    response_model=serializers.MessagesList,
+    dependencies=[Depends(RateLimiter(times=30, seconds=60))],
+)
 async def send_message_and_create_chat(
     request: Request,
     response: Response,
@@ -61,7 +75,10 @@ async def send_message_and_create_chat(
     )
 
 
-@router.delete("/chats/{message_id}/delete-message")
+@router.delete(
+    "/chats/{message_id}/delete-message",
+    dependencies=[Depends(RateLimiter(times=30, seconds=60))],
+)
 async def delete_message(
     message_id: int,
     request: Request,
@@ -74,7 +91,9 @@ async def delete_message(
 
 
 @router.patch(
-    "/chats/{message_id}/edit-message", response_model=serializers.MessagesList
+    "/chats/{message_id}/edit-message",
+    response_model=serializers.MessagesList,
+    dependencies=[Depends(RateLimiter(times=30, seconds=60))],
 )
 async def patch_message(
     message_id: int,
