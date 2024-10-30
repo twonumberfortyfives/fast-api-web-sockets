@@ -181,13 +181,6 @@ async def send_message_and_create_chat(
                 None,
             )
 
-            new_message = models.DBMessage(
-                sender_id=current_user.id,
-                receiver_id=user_id,
-                conversation_id=conversation.id,
-                content=encoded_data,
-            )
-
             if conversation is None:
                 new_conversation = models.DBConversation(name="New Chat")
                 db.add(new_conversation)
@@ -207,6 +200,13 @@ async def send_message_and_create_chat(
                     sender_id=current_user.id,
                     receiver_id=user_id,
                     conversation_id=new_conversation.id,
+                    content=encoded_data,
+                )
+            else:
+                new_message = models.DBMessage(
+                    sender_id=current_user.id,
+                    receiver_id=user_id,
+                    conversation_id=conversation.id,
                     content=encoded_data,
                 )
 
