@@ -31,8 +31,13 @@ class MessageCreate(BaseModel):
             encoded_data_in_bytes = base64.b64decode(values["content"].encode("utf-8"))
             values["content"] = cipher.decrypt(encoded_data_in_bytes).decode()
 
-            encoded_image_in_bytes = [base64.b64decode(photo.encode("utf-8")) for photo in values["files"]]
-            values["files"] = [cipher.decrypt(encoded_image).decode() for encoded_image in encoded_image_in_bytes]
+            encoded_image_in_bytes = [
+                base64.b64decode(photo.encode("utf-8")) for photo in values["files"]
+            ]
+            values["files"] = [
+                cipher.decrypt(encoded_image).decode()
+                for encoded_image in encoded_image_in_bytes
+            ]
 
         except (base64.binascii.Error, InvalidToken) as e:
             raise ValueError("Failed to decode or decrypt content") from e

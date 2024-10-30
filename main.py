@@ -6,6 +6,7 @@ import uuid
 import aiofiles
 import aiohttp
 import jwt
+import redis.asyncio as redis
 from fastapi import (
     FastAPI,
     WebSocket,
@@ -15,6 +16,7 @@ from fastapi import (
 from fastapi.staticfiles import StaticFiles
 
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi_limiter import FastAPILimiter
 from fastapi_pagination import add_pagination
 from fastapi.templating import Jinja2Templates
 from fastapi.exceptions import HTTPException
@@ -61,6 +63,10 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 @app.on_event("startup")
 async def on_startup():
     await init_db()
+    redis_connection = redis.from_url(
+        "redis://redis", encoding="utf-8", decode_responses=True
+    )
+    await FastAPILimiter.init(redis_connection)
 
 
 class ConnectionManager:
@@ -104,7 +110,7 @@ async def fetch(url, cookies):
 
 @app.websocket("/ws/posts/{post_id}")
 async def websocket_comments(
-        websocket: WebSocket, post_id: int, db: AsyncSession = Depends(get_db)
+    websocket: WebSocket, post_id: int, db: AsyncSession = Depends(get_db)
 ):
     await manager.connect(websocket, post_id, "post")
     while True:
@@ -189,9 +195,9 @@ async def websocket_comments(
 
 @app.websocket("/ws/chats/{chat_id}")
 async def websocket_chat(
-        websocket: WebSocket,
-        chat_id: int,
-        db: AsyncSession = Depends(get_db),
+    websocket: WebSocket,
+    chat_id: int,
+    db: AsyncSession = Depends(get_db),
 ):
     await manager.connect(websocket, chat_id, "chat")
     user_email = None
@@ -267,29 +273,35 @@ async def websocket_chat(
                     file_data_list = data.get("files", None)
                     if file_data_list:
                         for file_data in file_data_list:
-                            file_name = file_data.get('name')
-                            binary_data = file_data.get('data')
+                            file_name = file_data.get("name")
+                            binary_data = file_data.get("data")
 
                             if isinstance(binary_data, list):
                                 file_bytes = bytes(binary_data)
                             else:
-                                file_bytes = binary_data  # Assuming this is already in bytes
+                                file_bytes = (
+                                    binary_data  # Assuming this is already in bytes
+                                )
 
-                            print(f"File Name: {file_name}, File Bytes Length: {len(file_bytes)}")
+                            print(
+                                f"File Name: {file_name}, File Bytes Length: {len(file_bytes)}"
+                            )
 
                             file_path = f"uploads/{uuid.uuid4()}_{file_name}"
 
                             async with aiofiles.open(file_path, "wb") as f:
                                 await f.write(file_bytes)
 
-                            encrypted_data = await encrypt_message(f"http://127.0.0.1:8000/{file_path}")
+                            encrypted_data = await encrypt_message(
+                                f"http://127.0.0.1:8000/{file_path}"
+                            )
                             encoded_data = base64.b64encode(encrypted_data).decode(
                                 "utf-8"
                             )
 
                             new_file = models.DBFileMessage(
                                 message_id=message.id,
-                                link=encoded_data  # TODO: change before deploy
+                                link=encoded_data,  # TODO: change before deploy
                             )
                             db.add(new_file)
                             array_with_file_links.append(new_file)

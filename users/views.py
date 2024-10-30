@@ -233,7 +233,7 @@ async def my_profile_edit_view(
                 os.remove(old_image_full_path)
 
         # Store the URL for accessing the image
-        found_user.profile_picture = f"http://127.0.0.1:8000/{image_path}" # TODO: Change it to new domain before deployment
+        found_user.profile_picture = f"http://127.0.0.1:8000/{image_path}"  # TODO: Change it to new domain before deployment
 
     # Commit changes to the database
     try:

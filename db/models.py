@@ -56,11 +56,27 @@ class DBUser(Base):
     created_at = Column(DateTime, server_default=func.now())
 
     posts = relationship("DBPost", back_populates="user", cascade="all, delete-orphan")
-    post_likes = relationship("DBPostLike", back_populates="user", cascade="all, delete-orphan")
-    comments = relationship("DBComment", back_populates="user", cascade="all, delete-orphan")
-    conversations = relationship("DBConversationMember", back_populates="user", cascade="all, delete-orphan")
-    messages_sent = relationship("DBMessage", back_populates="sender", foreign_keys="DBMessage.sender_id", cascade="all, delete-orphan")
-    messages_received = relationship("DBMessage", back_populates="receiver", foreign_keys="DBMessage.receiver_id", cascade="all, delete-orphan")
+    post_likes = relationship(
+        "DBPostLike", back_populates="user", cascade="all, delete-orphan"
+    )
+    comments = relationship(
+        "DBComment", back_populates="user", cascade="all, delete-orphan"
+    )
+    conversations = relationship(
+        "DBConversationMember", back_populates="user", cascade="all, delete-orphan"
+    )
+    messages_sent = relationship(
+        "DBMessage",
+        back_populates="sender",
+        foreign_keys="DBMessage.sender_id",
+        cascade="all, delete-orphan",
+    )
+    messages_received = relationship(
+        "DBMessage",
+        back_populates="receiver",
+        foreign_keys="DBMessage.receiver_id",
+        cascade="all, delete-orphan",
+    )
 
 
 class DBPost(Base):
@@ -71,12 +87,18 @@ class DBPost(Base):
     content = Column(String(500), nullable=False)
     files = relationship("DBFile", back_populates="post", cascade="all, delete-orphan")
     _tags = Column(String(500), nullable=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
     created_at = Column(DateTime, server_default=func.now())
     user = relationship("DBUser", back_populates="posts")
 
-    likes = relationship("DBPostLike", back_populates="post", cascade="all, delete-orphan")
-    comments = relationship("DBComment", back_populates="post", cascade="all, delete-orphan")
+    likes = relationship(
+        "DBPostLike", back_populates="post", cascade="all, delete-orphan"
+    )
+    comments = relationship(
+        "DBComment", back_populates="post", cascade="all, delete-orphan"
+    )
 
     @property
     def tags(self):
@@ -123,7 +145,9 @@ class DBComment(Base):
     user = relationship("DBUser", back_populates="comments")
     post = relationship("DBPost", back_populates="comments")
     parent = relationship("DBComment", remote_side=[id], back_populates="replies")
-    replies = relationship("DBComment", back_populates="parent", cascade="all, delete-orphan")
+    replies = relationship(
+        "DBComment", back_populates="parent", cascade="all, delete-orphan"
+    )
 
     @validates("content")
     def validate_content(self, key, value):
@@ -139,8 +163,14 @@ class DBConversation(Base):
     name = Column(String(255), nullable=False)
     created_at = Column(DateTime, default=func.now())
 
-    members = relationship("DBConversationMember", back_populates="conversation", cascade="all, delete-orphan")
-    messages = relationship("DBMessage", back_populates="conversation", cascade="all, delete-orphan")
+    members = relationship(
+        "DBConversationMember",
+        back_populates="conversation",
+        cascade="all, delete-orphan",
+    )
+    messages = relationship(
+        "DBMessage", back_populates="conversation", cascade="all, delete-orphan"
+    )
 
     @classmethod
     def delete_if_empty(cls, session, conversation_id):
@@ -154,7 +184,9 @@ class DBConversationMember(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
-    conversation_id = Column(Integer, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False)
+    conversation_id = Column(
+        Integer, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False
+    )
     joined_at = Column(DateTime, default=func.now())
 
     user = relationship("DBUser", back_populates="conversations")
@@ -165,13 +197,25 @@ class DBMessage(Base):
     __tablename__ = "messages"
 
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
-    sender_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    receiver_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    conversation_id = Column(Integer, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False)
+    sender_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    receiver_id = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    conversation_id = Column(
+        Integer, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False
+    )
     content = Column(String(500), nullable=False)
     created_at = Column(DateTime, default=func.now())
 
-    sender = relationship("DBUser", foreign_keys=[sender_id], back_populates="messages_sent")
-    receiver = relationship("DBUser", foreign_keys=[receiver_id], back_populates="messages_received")
-    files = relationship("DBFileMessage", back_populates="message", cascade="all, delete-orphan")
+    sender = relationship(
+        "DBUser", foreign_keys=[sender_id], back_populates="messages_sent"
+    )
+    receiver = relationship(
+        "DBUser", foreign_keys=[receiver_id], back_populates="messages_received"
+    )
+    files = relationship(
+        "DBFileMessage", back_populates="message", cascade="all, delete-orphan"
+    )
     conversation = relationship("DBConversation", back_populates="messages")

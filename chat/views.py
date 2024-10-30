@@ -38,9 +38,11 @@ async def get_chat_history(
             .filter(
                 or_(
                     # Messages where current user is the sender and receiver is the recipient
-                    (models.DBMessage.sender_id == current_user.id) & (models.DBMessage.receiver_id == receiver.id),
+                    (models.DBMessage.sender_id == current_user.id)
+                    & (models.DBMessage.receiver_id == receiver.id),
                     # Messages where receiver is the sender and current user is the recipient
-                    (models.DBMessage.sender_id == receiver.id) & (models.DBMessage.receiver_id == current_user.id)
+                    (models.DBMessage.sender_id == receiver.id)
+                    & (models.DBMessage.receiver_id == current_user.id),
                 )
             )
             .order_by(models.DBMessage.created_at)
@@ -107,7 +109,9 @@ async def get_all_chats(request: Request, response: Response, db: AsyncSession):
             ),
             "created_at": chat.created_at,
             "last_message": (
-                sorted(chat.messages, key=lambda m: m.created_at, reverse=True)[0].content
+                sorted(chat.messages, key=lambda m: m.created_at, reverse=True)[
+                    0
+                ].content
                 if chat.messages
                 else None
             ),
@@ -165,7 +169,8 @@ async def send_message_and_create_chat(
                 select(models.DBConversation)
                 .join(
                     models.DBConversationMember,
-                    models.DBConversationMember.conversation_id == models.DBConversation.id,
+                    models.DBConversationMember.conversation_id
+                    == models.DBConversation.id,
                 )
                 .options(selectinload(models.DBConversation.members))
                 .where(models.DBConversationMember.user_id == current_user.id)
@@ -235,10 +240,7 @@ async def send_message_and_create_chat(
 
 
 async def delete_message_view(
-        message_id: int,
-        request: Request,
-        response: Response,
-        db: AsyncSession
+    message_id: int, request: Request, response: Response, db: AsyncSession
 ):
     current_user = await get_current_user(request=request, response=response, db=db)
     query = await db.execute(
@@ -256,11 +258,11 @@ async def delete_message_view(
 
 
 async def edit_message_view(
-        message_id: int,
-        content: str,
-        request: Request,
-        response: Response,
-        db: AsyncSession,
+    message_id: int,
+    content: str,
+    request: Request,
+    response: Response,
+    db: AsyncSession,
 ):
     current_user = await get_current_user(request=request, response=response, db=db)
     query = await db.execute(

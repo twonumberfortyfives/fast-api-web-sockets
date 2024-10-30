@@ -74,26 +74,36 @@ async def retrieve_post_view(
     if isinstance(post, str) and post.isdigit():
         post_id = int(post)
         result = await db.execute(
-            query.filter(models.DBPost.id == post_id).distinct().order_by(models.DBPost.id.desc())
+            query.filter(models.DBPost.id == post_id)
+            .distinct()
+            .order_by(models.DBPost.id.desc())
         )
         posts = result.scalars().all()
 
     elif isinstance(post, str):
         if post.startswith("#"):
             result = await db.execute(
-                query.filter(models.DBPost._tags.ilike(f"%{post.lstrip('#')}%")).distinct().order_by(models.DBPost.id.desc())
+                query.filter(models.DBPost._tags.ilike(f"%{post.lstrip('#')}%"))
+                .distinct()
+                .order_by(models.DBPost.id.desc())
             )
         else:
             result = await db.execute(
-                query.filter(models.DBPost.topic.ilike(f"%{post}%")).distinct().order_by(models.DBPost.id.desc())
+                query.filter(models.DBPost.topic.ilike(f"%{post}%"))
+                .distinct()
+                .order_by(models.DBPost.id.desc())
             )
         posts = result.scalars().all()
     else:
         raise HTTPException(status_code=404, detail="No post found")
 
     try:
-        current_user_id = (await get_current_user(request=request, response=response, db=db)).id
-        return await get_posts_with_full_info(posts=posts, current_user_id=current_user_id)
+        current_user_id = (
+            await get_current_user(request=request, response=response, db=db)
+        ).id
+        return await get_posts_with_full_info(
+            posts=posts, current_user_id=current_user_id
+        )
     except HTTPException as e:
         if e.status_code == 401:
             return posts
@@ -155,7 +165,8 @@ async def create_post_view(
                 await f.write(await file.read())
 
             file_record = models.DBFile(
-                link=f"http://127.0.0.1:8000/{image_path}", post_id=new_post.id  # TODO: Change it to new domain before deployment
+                link=f"http://127.0.0.1:8000/{image_path}",
+                post_id=new_post.id,  # TODO: Change it to new domain before deployment
             )
             db.add(file_record)
             list_of_file_records.append(file_record)
