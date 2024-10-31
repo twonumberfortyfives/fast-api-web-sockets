@@ -3,6 +3,7 @@ from typing import Optional
 
 from fastapi import HTTPException, Request, Response, UploadFile
 from passlib.context import CryptContext
+from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -82,10 +83,14 @@ async def retrieve_post_view(
 
     elif isinstance(post, str):
         if post.startswith("#"):
+            array_of_tags = post.split(",")
+            without_hashtags = [tag.strip().lstrip("#") for tag in array_of_tags]
+
+            conditions = [
+                models.DBPost._tags.ilike(f"%{tag}%") for tag in without_hashtags
+            ]
             result = await db.execute(
-                query.filter(models.DBPost._tags.ilike(f"%{post.lstrip('#')}%"))
-                .distinct()
-                .order_by(models.DBPost.id.desc())
+                query.filter(or_(*conditions)).distinct().order_by(models.DBPost.id.desc())
             )
         else:
             result = await db.execute(
@@ -93,7 +98,9 @@ async def retrieve_post_view(
                 .distinct()
                 .order_by(models.DBPost.id.desc())
             )
+
         posts = result.scalars().all()
+
     else:
         raise HTTPException(status_code=404, detail="No post found")
 
@@ -101,9 +108,7 @@ async def retrieve_post_view(
         current_user_id = (
             await get_current_user(request=request, response=response, db=db)
         ).id
-        return await get_posts_with_full_info(
-            posts=posts, current_user_id=current_user_id
-        )
+        return await get_posts_with_full_info(posts=posts, current_user_id=current_user_id)
     except HTTPException as e:
         if e.status_code == 401:
             return posts
