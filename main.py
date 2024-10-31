@@ -293,7 +293,7 @@ async def websocket_chat(
                                 await f.write(file_bytes)
 
                             encrypted_data = await encrypt_message(
-                                f"http://127.0.0.1:8000/{file_path}"
+                                f"http://127.0.0.1:8000/{file_path}"  # TODO: change before deploy
                             )
                             encoded_data = base64.b64encode(encrypted_data).decode(
                                 "utf-8"
@@ -357,3 +357,11 @@ async def websocket_chat(
             print(f"Unexpected error: {str(e)}")
             await websocket.close()
             break
+
+from celery_tasks import print_message
+
+
+@app.post("/start-task")
+async def start_task(message: str):
+    print_message.delay(message)  # Call the Celery task
+    return {"message": "Task started!"}

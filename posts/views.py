@@ -125,10 +125,8 @@ async def create_post_view(
     content: str,
     tags: Optional[str] = None,
 ):
-    # Get the current user's ID
     user_id = (await get_current_user(db=db, request=request, response=response)).id
 
-    # Validate input fields
     if not topic or not topic.strip():
         raise HTTPException(
             status_code=400, detail="Topic cannot be empty or contain only spaces."
@@ -155,8 +153,6 @@ async def create_post_view(
     await db.commit()
     await db.refresh(new_post)
 
-    # Process uploaded files
-    list_of_file_records = []
     if files and files != ["string"] and files != [""]:
         supported_types = ["image/png", "image/jpeg"]
         if any(file.content_type not in supported_types for file in files):
@@ -174,9 +170,7 @@ async def create_post_view(
                 post_id=new_post.id,  # TODO: Change it to new domain before deployment
             )
             db.add(file_record)
-            list_of_file_records.append(file_record)
-
-        await db.commit()  # Refresh to get any new data
+        await db.commit()
 
     query = (
         select(models.DBPost)

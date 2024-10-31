@@ -3,7 +3,6 @@ import uuid
 
 from fastapi import HTTPException, UploadFile
 from passlib.context import CryptContext
-from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from fastapi import Response, Request
