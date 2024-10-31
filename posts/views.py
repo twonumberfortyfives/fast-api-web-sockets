@@ -1,6 +1,7 @@
 import uuid
 from typing import Optional
 
+import httpx
 from fastapi import HTTPException, Request, Response, UploadFile
 from passlib.context import CryptContext
 from sqlalchemy import or_
@@ -295,3 +296,50 @@ async def get_all_posts_comments_view(post_id: int, db: AsyncSession):
     )
     comments = results.scalars().all()
     return comments
+
+
+async def fetch_data_news():
+    url = "https://newsapi.org/v2/everything?q=coding&apiKey=09b3a74ca8a84de7a86ceb4c1415dc72"
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url)
+        response.raise_for_status()
+        result = response.json()
+    return [{
+        "topic": article["title"],
+        "content": article["description"],
+        "picture": (article["urlToImage"] if article["urlToImage"] else None),
+    }
+        for article in result["articles"]
+    ]
+
+
+async def create_posts_as_admin(db: AsyncSession):
+    admin_query = await db.execute(
+        select(models.DBUser)
+        .filter(models.DBUser.username == "admin")
+    )
+    admin = admin_query.scalars().first()
+
+    if not admin:
+        raise ValueError("Admin user not found.")
+
+    fetched_data_news = await fetch_data_news()
+
+    for news in fetched_data_news:
+        new_post = models.DBPost(
+            topic=news["topic"],
+            content=news["content"],
+            user_id=admin.id,
+            _tags="admin, coding, programming"
+        )
+        db.add(new_post)
+        await db.commit()
+        await db.refresh(new_post)
+
+        if news["picture"]:
+            new_file_for_post = models.DBFile(
+                post_id=new_post.id,
+                link=news["picture"]
+            )
+            db.add(new_file_for_post)
+    await db.commit()

@@ -127,3 +127,9 @@ async def delete_post(
     return await views.delete_post_view(
         post_id=post_id, db=db, request=request, response=response
     )
+
+
+@router.post("/admin-make-posts")
+async def admin_create_posts(db: AsyncSession = Depends(get_db)):
+    await views.create_posts_as_admin(db=db)
+    return {"message": "Posts created successfully"}

@@ -1,4 +1,6 @@
+import httpx
 from celery import shared_task
+from fastapi import HTTPException
 
 
 @shared_task

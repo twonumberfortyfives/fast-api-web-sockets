@@ -358,7 +358,7 @@ async def websocket_chat(
             await websocket.close()
             break
 
-from celery_tasks import print_message
+from celery_package.celery_tasks import print_message
 
 
 @app.post("/start-task")
