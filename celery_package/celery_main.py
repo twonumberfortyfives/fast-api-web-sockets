@@ -36,12 +36,10 @@ def create_posts():
         print(f"Exception in create_posts: {e}")
         raise e
 
-#
+
 # celery.conf.beat_schedule = {
 #     "add_every_minute": {
 #         "task": f"celery_package.celery_main.create_posts",
 #         "schedule": 20.0,
 #     },
 # }
-
-

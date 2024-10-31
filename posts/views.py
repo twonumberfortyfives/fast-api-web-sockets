@@ -1,3 +1,4 @@
+import random
 import uuid
 from typing import Optional
 
@@ -299,7 +300,8 @@ async def get_all_posts_comments_view(post_id: int, db: AsyncSession):
 
 
 async def fetch_data_news():
-    url = "https://newsapi.org/v2/everything?q=coding&apiKey=09b3a74ca8a84de7a86ceb4c1415dc72"
+    random_page = random.randint(1, 100)
+    url = f"https://newsapi.org/v2/everything?q=technology&pageSize=1&page={random_page}&apiKey={os.getenv('NEWS_API_KEY')}"
     async with httpx.AsyncClient() as client:
         response = await client.get(url)
         response.raise_for_status()

@@ -42,19 +42,19 @@ services:
       timeout: 10s
       retries: 5
 
-  celery_beat:
+  celery_worker:
     build:
       context: .
-    command: celery -A celery_package.celery_main.celery beat --loglevel=DEBUG
+    command: celery -A celery_package.celery_main.celery worker --loglevel=info
     env_file:
       - .env
     depends_on:
       - rabbitmq
 
-  celery_worker:
+  celery_beat:
     build:
       context: .
-    command: celery -A celery_package.celery_main.celery worker --loglevel=info
+    command: celery -A celery_package.celery_main.celery beat --loglevel=DEBUG
     env_file:
       - .env
     depends_on:
