@@ -39,7 +39,6 @@ async def get_users(db: AsyncSession = Depends(get_db)) -> Page[serializers.User
 @router.get(
     "/users/{user}",
     dependencies=[Depends(RateLimiter(times=30, seconds=60))],
-
 )
 async def retrieve_user(
     user, db: AsyncSession = Depends(get_db)
@@ -127,7 +126,6 @@ async def register(user: serializers.UserCreate, db: AsyncSession = Depends(get_
 @router.post(
     "/login",
     dependencies=[Depends(RateLimiter(times=30, seconds=60))],
-
 )
 async def login(user: serializers.UserLogin, db: AsyncSession = Depends(get_db)):
     user_tokens = await views.login_view(db=db, user=user)
