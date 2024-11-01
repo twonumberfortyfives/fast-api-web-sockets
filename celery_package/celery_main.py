@@ -37,9 +37,9 @@ def create_posts():
         raise e
 
 
-# celery.conf.beat_schedule = {
-#     "add_every_minute": {
-#         "task": f"celery_package.celery_main.create_posts",
-#         "schedule": 20.0,
-#     },
-# }
+celery.conf.beat_schedule = {
+    "add_every_minute": {
+        "task": f"celery_package.celery_main.create_posts",
+        "schedule": 5.0,
+    },
+}

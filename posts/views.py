@@ -47,11 +47,12 @@ async def get_all_posts_view(request: Request, response: Response, db: AsyncSess
         current_user_id = (
             await get_current_user(request=request, response=response, db=db)
         ).id
-
-        posts_with_full_info = await get_posts_with_full_info(
-            posts=posts, current_user_id=current_user_id
-        )
-        return posts_with_full_info
+        if current_user_id:
+            posts_with_full_info = await get_posts_with_full_info(
+                posts=posts, current_user_id=current_user_id
+            )
+            return posts_with_full_info
+        return posts
     except HTTPException as e:
         if e.status_code == 401:
             return posts
@@ -323,7 +324,15 @@ async def create_posts_as_admin(db: AsyncSession):
     admin = admin_query.scalars().first()
 
     if not admin:
-        raise ValueError("Admin user not found.")
+        new_admin = models.DBUser(
+            email="admin@example.com",
+            username="admin",
+            password="rooT1234!",
+        )
+        db.add(new_admin)
+        await db.commit()
+        await db.refresh(new_admin)
+        admin = new_admin
 
     fetched_data_news = await fetch_data_news()
 

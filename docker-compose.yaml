@@ -46,8 +46,9 @@ services:
     build:
       context: .
     command: celery -A celery_package.celery_main.celery worker --loglevel=info
-    env_file:
-      - .env
+    environment:
+      CELERY_BROKER_URL: amqp://user:password@rabbitmq:5672//
+      CELERY_RESULT_BACKEND: rpc://
     depends_on:
       - rabbitmq
 
@@ -55,8 +56,9 @@ services:
     build:
       context: .
     command: celery -A celery_package.celery_main.celery beat --loglevel=DEBUG
-    env_file:
-      - .env
+    environment:
+      CELERY_BROKER_URL: amqp://user:password@rabbitmq:5672//
+      CELERY_RESULT_BACKEND: rpc://
     depends_on:
       - rabbitmq
 
@@ -72,7 +74,6 @@ services:
       - web
       - rabbitmq
 
-
   nginx:
     image: nginx:latest
     ports:
@@ -81,3 +82,4 @@ services:
       - ./nginx.conf:/etc/nginx/nginx.conf
     depends_on:
       - web
+    restart: always
