@@ -78,8 +78,19 @@ services:
     image: nginx:latest
     ports:
       - "80:80"
+      - "443:443"  # Add this line for HTTPS
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
     depends_on:
       - web
     restart: always
+
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    command: certonly --webroot -w /var/www/certbot --force-renewal --email sma4no.7@gmail.com -d ec2-13-60-63-57.eu-north-1.compute.amazonaws.com --agree-tos

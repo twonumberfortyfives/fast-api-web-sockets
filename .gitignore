@@ -2,3 +2,5 @@
 .venv
 .env
 uploads
+server.crt
+server.key
