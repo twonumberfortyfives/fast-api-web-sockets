@@ -12,7 +12,7 @@ router = APIRouter()
 
 @router.get(
     "/chats/{user_id}",
-    dependencies=[Depends(RateLimiter(times=30, seconds=60))],
+    dependencies=[Depends(RateLimiter(times=120, seconds=60))],
 )
 async def get_all_messages(
     user_id: int,
@@ -29,7 +29,7 @@ async def get_all_messages(
 
 @router.get(
     "/chats",
-    dependencies=[Depends(RateLimiter(times=30, seconds=60))],
+    dependencies=[Depends(RateLimiter(times=120, seconds=60))],
 )
 async def get_all_chats(
     request: Request, response: Response, db: AsyncSession = Depends(get_db)
@@ -41,7 +41,7 @@ async def get_all_chats(
 
 @router.delete(
     "/chats/{chat_id}",
-    dependencies=[Depends(RateLimiter(times=30, seconds=60))],
+    dependencies=[Depends(RateLimiter(times=120, seconds=60))],
 )
 async def delete_chat(
     request: Request,
@@ -57,7 +57,7 @@ async def delete_chat(
 @router.post(
     "/chats/{user_id}/send-message",
     response_model=serializers.MessagesList,
-    dependencies=[Depends(RateLimiter(times=30, seconds=60))],
+    dependencies=[Depends(RateLimiter(times=120, seconds=60))],
 )
 async def send_message_and_create_chat(
     request: Request,
@@ -77,7 +77,7 @@ async def send_message_and_create_chat(
 
 @router.delete(
     "/chats/{message_id}/delete-message",
-    dependencies=[Depends(RateLimiter(times=30, seconds=60))],
+    dependencies=[Depends(RateLimiter(times=120, seconds=60))],
 )
 async def delete_message(
     message_id: int,
@@ -93,7 +93,7 @@ async def delete_message(
 @router.patch(
     "/chats/{message_id}/edit-message",
     response_model=serializers.MessagesList,
-    dependencies=[Depends(RateLimiter(times=30, seconds=60))],
+    dependencies=[Depends(RateLimiter(times=120, seconds=60))],
 )
 async def patch_message(
     message_id: int,
