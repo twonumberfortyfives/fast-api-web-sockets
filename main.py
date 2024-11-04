@@ -42,7 +42,10 @@ templates = Jinja2Templates(directory="templates")
 
 add_pagination(app)
 
-origins = ["*"]
+origins = [
+    "https://test.backendserviceforumapi.online",
+    "https://guziiuchyk.github.io"
+]
 
 app.add_middleware(
     CORSMiddleware,
