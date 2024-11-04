@@ -92,7 +92,7 @@ services:
       "certonly",
       "--webroot",
       "-w", "/tmp/acme_challenge",
-        "-d", "backendserviceforumapi.agora.com",
+        "-d", "backendserviceforumapi.online",
       "--text",
       "--agree-tos",
       "--email", "sma4no.7@gmail.com",
