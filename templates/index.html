@@ -1,32 +1,67 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <title>Chat</title>
-    </head>
-    <body>
-        <h1>WebSocket Chat</h1>
-        <h2>Your ID: <span id="ws-id"></span></h2>
-        <form action="" onsubmit="sendMessage(event)">
-            <input type="text" id="messageText" autocomplete="off"/>
-            <button>Send</button>
-        </form>
-        <ul id='messages'>
-        </ul>
-        <script>
-            var ws = new WebSocket(`ws://localhost:8000/ws/posts/1`);
-            ws.onmessage = function(event) {
-                var messages = document.getElementById('messages')
-                var message = document.createElement('li')
-                var content = document.createTextNode(event.data)
-                message.appendChild(content)
-                messages.appendChild(message)
-            };
-            function sendMessage(event) {
-                var input = document.getElementById("messageText")
-                ws.send(JSON.stringify(input.value))
-                input.value = ''
-                event.preventDefault()
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+</head>
+<body>
+    <h1>WebSocket Chat</h1>
+    <h2>Your ID: <span id="ws-id"></span></h2>
+
+    <!-- Input for Post ID -->
+    <label for="postId">Enter Post ID:</label>
+    <input type="text" id="postId" placeholder="Post ID" />
+    <button onclick="connectWebSocket()">Connect</button>
+
+    <form action="" onsubmit="sendMessage(event)">
+        <input type="text" id="messageText" autocomplete="off"/>
+        <button>Send</button>
+    </form>
+    <ul id='messages'></ul>
+
+    <script>
+        let ws;
+
+        function connectWebSocket() {
+            const postId = document.getElementById("postId").value; // Get the post ID
+            if (ws) {
+                ws.close(); // Close existing WebSocket connection if it exists
             }
-        </script>
-    </body>
+
+            // Connect to the new WebSocket using wss
+            ws = new WebSocket(`wss://${window.location.host}/ws/posts/${postId}`);
+
+            // Handle incoming messages
+            ws.onmessage = function(event) {
+                const messages = document.getElementById('messages');
+                const message = document.createElement('li');
+                const content = document.createTextNode(event.data);
+                message.appendChild(content);
+                messages.appendChild(message);
+            };
+
+            // Handle connection errors
+            ws.onerror = function(event) {
+                console.error("WebSocket error observed:", event);
+            };
+
+            // Log connection status
+            ws.onopen = function() {
+                console.log(`Connected to WebSocket for Post ID: ${postId}`);
+            };
+
+            ws.onclose = function() {
+                console.log(`Disconnected from WebSocket for Post ID: ${postId}`);
+            };
+        }
+
+        function sendMessage(event) {
+            event.preventDefault(); // Prevent form submission
+            const input = document.getElementById("messageText");
+            ws.send(input.value); // Send the input value directly
+            input.value = ''; // Clear the input field
+        }
+    </script>
+</body>
 </html>

@@ -18,6 +18,12 @@
 <body>
 <h1>WebSocket Chat</h1>
 <h2>Your ID: <span id="ws-id"></span></h2>
+
+<!-- Input for Chat ID -->
+<label for="chatId">Enter Chat ID:</label>
+<input type="text" id="chatId" placeholder="Chat ID" />
+<button onclick="connectWebSocket()">Connect</button>
+
 <form action="" onsubmit="sendMessage(event)">
   <input type="text" id="messageText" autocomplete="off" placeholder="Type your message"/>
   <input type="file" id="fileInput" multiple accept="image/*" onchange="updateFilePreview()" />
@@ -27,28 +33,37 @@
 <ul id='messages'></ul>
 
 <script>
-    const ws = new WebSocket(`ws://localhost:8000/ws/chats/240`);
+    let ws;
 
-    ws.onmessage = function (event) {
-        const messages = document.getElementById('messages');
-        const messageData = JSON.parse(event.data);
-
-        const messageItem = document.createElement('li');
-        messageItem.textContent = messageData.content;
-
-        if (messageData.files) {
-            messageData.files.forEach(file => {
-                const fileLink = document.createElement('a');
-                fileLink.href = file.url;
-                fileLink.textContent = file.name; // Display file name
-                fileLink.target = "_blank"; // Open in a new tab
-                messageItem.appendChild(fileLink);
-            });
+    function connectWebSocket() {
+        const chatId = document.getElementById("chatId").value; // Get the chat ID
+        if (ws) {
+            ws.close(); // Close existing WebSocket connection if it exists
         }
 
-        messages.appendChild(messageItem);
-        messages.scrollTop = messages.scrollHeight; // Scroll to the bottom
-    };
+        ws = new WebSocket(`wss://${window.location.host}/ws/chats/${chatId}`); // Connect to the new WebSocket
+
+        ws.onmessage = function (event) {
+            const messages = document.getElementById('messages');
+            const messageData = JSON.parse(event.data);
+
+            const messageItem = document.createElement('li');
+            messageItem.textContent = messageData.content;
+
+            if (messageData.files) {
+                messageData.files.forEach(file => {
+                    const fileLink = document.createElement('a');
+                    fileLink.href = file.url;
+                    fileLink.textContent = file.name; // Display file name
+                    fileLink.target = "_blank"; // Open in a new tab
+                    messageItem.appendChild(fileLink);
+                });
+            }
+
+            messages.appendChild(messageItem);
+            messages.scrollTop = messages.scrollHeight; // Scroll to the bottom
+        };
+    }
 
     function sendMessage(event) {
         event.preventDefault(); // Prevent form submission

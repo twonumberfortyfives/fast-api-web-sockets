@@ -13,6 +13,7 @@ from fastapi import (
     WebSocketDisconnect,
     Depends,
 )
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -365,3 +366,13 @@ from celery_package.celery_tasks import print_message
 async def start_task(message: str):
     print_message.delay(message)  # Call the Celery task
     return {"message": "Task started!"}
+
+
+@app.get("/test-private-chat")
+def get_private_chat():
+    return HTMLResponse(content=open("templates/chat.html").read())
+
+
+@app.get("/test-comments")
+def get_comments():
+    return HTMLResponse(content=open("templates/index.html").read())
