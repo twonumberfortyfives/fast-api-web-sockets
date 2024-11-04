@@ -48,7 +48,7 @@ class DBUser(Base):
     email = Column(String, unique=True, nullable=False)
     username = Column(String(30), unique=True, nullable=False)
     profile_picture = Column(
-        String, default="http://127.0.0.1:8000/uploads/default.jpg"
+        String, default="https://test.backendserviceforumapi.online/uploads/default.jpg"
     )
     password = Column(String, nullable=False)
     bio = Column(String(500), nullable=True)
