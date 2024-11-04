@@ -15,10 +15,10 @@
     <button onclick="connectWebSocket()">Connect</button>
 
     <form action="" onsubmit="sendMessage(event)">
-        <input type="text" id="messageText" autocomplete="off"/>
+        <input type="text" id="messageText" autocomplete="off" placeholder="Type a message"/>
         <button>Send</button>
     </form>
-    <ul id='messages'></ul>
+    <ul id="messages"></ul>
 
     <script>
         let ws;
@@ -29,7 +29,7 @@
                 ws.close(); // Close existing WebSocket connection if it exists
             }
 
-            // Connect to the new WebSocket using wss
+            // Connect to the new WebSocket using wss (secure WebSocket)
             ws = new WebSocket(`wss://${window.location.host}/ws/posts/${postId}`);
 
             // Handle incoming messages
@@ -59,7 +59,8 @@
         function sendMessage(event) {
             event.preventDefault(); // Prevent form submission
             const input = document.getElementById("messageText");
-            ws.send(input.value); // Send the input value directly
+            const message = { text: input.value }; // Wrap the message text in an object for JSON formatting
+            ws.send(JSON.stringify(message)); // Send the message as JSON
             input.value = ''; // Clear the input field
         }
     </script>

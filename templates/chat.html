@@ -5,21 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chat</title>
   <style>
-      /* Basic styling for file preview */
-      .file-item {
-          margin: 5px 0;
-      }
-      .image-preview {
-          max-width: 100px; /* Set a maximum width for image previews */
-          margin: 5px;
-      }
+      .file-item { margin: 5px 0; }
+      .image-preview { max-width: 100px; margin: 5px; }
   </style>
 </head>
 <body>
 <h1>WebSocket Chat</h1>
 <h2>Your ID: <span id="ws-id"></span></h2>
 
-<!-- Input for Chat ID -->
 <label for="chatId">Enter Chat ID:</label>
 <input type="text" id="chatId" placeholder="Chat ID" />
 <button onclick="connectWebSocket()">Connect</button>
@@ -36,17 +29,13 @@
     let ws;
 
     function connectWebSocket() {
-        const chatId = document.getElementById("chatId").value; // Get the chat ID
-        if (ws) {
-            ws.close(); // Close existing WebSocket connection if it exists
-        }
-
-        ws = new WebSocket(`wss://${window.location.host}/ws/chats/${chatId}`); // Connect to the new WebSocket
+        const chatId = document.getElementById("chatId").value;
+        if (ws) ws.close();
+        ws = new WebSocket(`wss://${window.location.host}/ws/chats/${chatId}`);
 
         ws.onmessage = function (event) {
             const messages = document.getElementById('messages');
             const messageData = JSON.parse(event.data);
-
             const messageItem = document.createElement('li');
             messageItem.textContent = messageData.content;
 
@@ -54,75 +43,69 @@
                 messageData.files.forEach(file => {
                     const fileLink = document.createElement('a');
                     fileLink.href = file.url;
-                    fileLink.textContent = file.name; // Display file name
-                    fileLink.target = "_blank"; // Open in a new tab
+                    fileLink.textContent = file.name;
+                    fileLink.target = "_blank";
                     messageItem.appendChild(fileLink);
                 });
             }
-
             messages.appendChild(messageItem);
-            messages.scrollTop = messages.scrollHeight; // Scroll to the bottom
+            messages.scrollTop = messages.scrollHeight;
         };
     }
 
     function sendMessage(event) {
-        event.preventDefault(); // Prevent form submission
+        event.preventDefault();
         const input = document.getElementById("messageText");
-        const files = document.getElementById("fileInput").files; // Input element for file selection
+        const files = document.getElementById("fileInput").files;
         const fileDataArray = [];
 
-        // Create an array of promises to read all files
         const fileReadPromises = Array.from(files).map(file => {
             return new Promise((resolve) => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     fileDataArray.push({
                         name: file.name,
-                        data: Array.from(new Uint8Array(e.target.result)), // Convert to Array
+                        data: Array.from(new Uint8Array(e.target.result))
                     });
-                    resolve(); // Resolve promise when done reading the file
+                    resolve();
                 };
-                reader.readAsArrayBuffer(file); // Read file as ArrayBuffer
+                reader.readAsArrayBuffer(file);
             });
         });
 
-        // Send the message after all files have been processed
         Promise.all(fileReadPromises).then(() => {
             ws.send(JSON.stringify({
                 content: input.value,
                 files: fileDataArray
             }));
-            input.value = ''; // Clear the message input
-            document.getElementById("fileInput").value = ''; // Clear file input
-            clearFilePreview(); // Clear file preview after sending
+            input.value = '';
+            document.getElementById("fileInput").value = '';
+            clearFilePreview();
         });
     }
 
     function updateFilePreview() {
         const fileInput = document.getElementById("fileInput");
         const filePreview = document.getElementById("filePreview");
-
-        // Clear previous preview
-        filePreview.innerHTML = ''; // Clear previous previews
+        filePreview.innerHTML = '';
 
         for (let file of fileInput.files) {
             const fileItem = document.createElement('div');
             fileItem.className = 'file-item';
-            fileItem.textContent = file.name; // Display file name
+            fileItem.textContent = file.name;
 
-            // Create image preview for image files
             const imgPreview = document.createElement('img');
             imgPreview.className = 'image-preview';
-            imgPreview.src = URL.createObjectURL(file); // Create a URL for the file
-            imgPreview.alt = file.name; // Set alt text
+            imgPreview.src = URL.createObjectURL(file);
+            imgPreview.alt = file.name;
 
-            filePreview.appendChild(imgPreview); // Append image preview
+            filePreview.appendChild(imgPreview);
             filePreview.appendChild(fileItem);
         }
     }
 
     function clearFilePreview() {
-        document.getElementById("filePreview").innerHTML = ''; // Clear the file preview
+        document.getElementById("filePreview").innerHTML = '';
     }
 </script>
 </body>
