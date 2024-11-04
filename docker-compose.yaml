@@ -85,11 +85,22 @@ services:
       - /tmp/acme_challenge:/tmp/acme_challenge
     restart: always
 
-
   letsencrypt:
     container_name: 'certbot-service'
     image: certbot/certbot
-    command: sh -c "certbot certonly --webroot -w /tmp/acme_challenge -d forumbackend.agora.com --text --agree-tos --email sma4no.7@gmail.com --rsa-key-size 4096 --verbose --keep-until-expiring --preferred-challenges=http"
+    command: [
+      "certonly",
+      "--webroot",
+      "-w", "/tmp/acme_challenge",
+        "-d", "forumbackend.agora.com",
+      "--text",
+      "--agree-tos",
+      "--email", "sma4no.7@gmail.com",
+      "--rsa-key-size", "4096",
+      "--verbose",
+      "--keep-until-expiring",
+      "--preferred-challenges", "http"
+    ]
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt
       - /tmp/acme_challenge:/tmp/acme_challenge
