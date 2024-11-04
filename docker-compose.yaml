@@ -83,9 +83,6 @@ services:
       - ./nginx.conf:/etc/nginx/nginx.conf
       - /etc/letsencrypt:/etc/letsencrypt:ro
       - /tmp/acme_challenge:/tmp/acme_challenge
-    depends_on:
-      - web
-      - letsencrypt
     restart: always
 
 
