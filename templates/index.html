@@ -59,7 +59,7 @@
         function sendMessage(event) {
             event.preventDefault(); // Prevent form submission
             const input = document.getElementById("messageText");
-            const message = { text: input.value }; // Wrap the message text in an object for JSON formatting
+            const message = input.value // Wrap the message text in an object for JSON formatting
             ws.send(JSON.stringify(message)); // Send the message as JSON
             input.value = ''; // Clear the input field
         }
