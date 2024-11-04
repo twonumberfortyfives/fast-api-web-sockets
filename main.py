@@ -167,7 +167,7 @@ async def websocket_comments(
 
         except (jwt.ExpiredSignatureError, jwt.exceptions.ExpiredSignatureError):
             # Refresh the token logic
-            url = "http://localhost:8000/api/is-authenticated/"  # TODO: Change it to new domain before deployment
+            url = "https://test.backendserviceforumapi.online/api/is-authenticated/"
             response = await fetch(url, websocket.cookies)
             set_cookie_header = response.headers.get("Set-Cookie")
 
@@ -294,7 +294,7 @@ async def websocket_chat(
                                 await f.write(file_bytes)
 
                             encrypted_data = await encrypt_message(
-                                f"http://127.0.0.1:8000/{file_path}"  # TODO: change before deploy
+                                f"https://test.backendserviceforumapi.online/{file_path}"
                             )
                             encoded_data = base64.b64encode(encrypted_data).decode(
                                 "utf-8"
@@ -302,7 +302,7 @@ async def websocket_chat(
 
                             new_file = models.DBFileMessage(
                                 message_id=message.id,
-                                link=encoded_data,  # TODO: change before deploy
+                                link=encoded_data,
                             )
                             db.add(new_file)
                             array_with_file_links.append(new_file)
@@ -335,7 +335,7 @@ async def websocket_chat(
                     break
 
         except (jwt.ExpiredSignatureError, jwt.exceptions.ExpiredSignatureError):
-            url = "http://localhost:8000/api/is-authenticated/"  # TODO: Change it to new domain before deployment
+            url = "https://test.backendserviceforumapi.online/api/is-authenticated/"
             response = await fetch(url, websocket.cookies)
             set_cookie_header = response.headers.get("Set-Cookie")
 
