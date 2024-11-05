@@ -50,11 +50,11 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://guziiuchyk.github.io", "https://test.backendserviceforumapi.online"],
+    allow_origins=["*"],  # Allows all origins
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["X-all-posts-count"],
+    allow_methods=["*"],   # Allows all HTTP methods
+    allow_headers=["*"],   # Allows all headers
+    expose_headers=["X-all-posts-count"],  # Expose custom headers if needed
 )
 
 app.include_router(users_router, prefix="/api", tags=["users"])
