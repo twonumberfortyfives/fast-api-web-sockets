@@ -53,7 +53,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://opiskelija9.amiskoodari.fi", "https://test.backendserviceforumapi.online"],  # Ensure only trusted origins are allowed
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
     expose_headers=["X-all-posts-count"],
 )
