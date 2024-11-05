@@ -44,7 +44,8 @@ add_pagination(app)
 
 origins = [
     "https://test.backendserviceforumapi.online",
-    "https://guziiuchyk.github.io"
+    "https://guziiuchyk.github.io",
+    "https://guziiuchyk.github.io/react-forum/*"
 ]
 
 app.add_middleware(
