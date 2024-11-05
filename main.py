@@ -51,11 +51,11 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://opiskelija9.amiskoodari.fi", "https://test.backendserviceforumapi.online"],  # Allow only specific origin
-    allow_credentials=True,                          # Allow credentials (cookies, authorization headers, etc.)
-    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],  # Specify allowed HTTP methods
-    allow_headers=["Content-Type", "Authorization"],  # Specify allowed headers
-    expose_headers=["X-all-posts-count"],            # Expose custom headers if needed
+    allow_origins=["https://opiskelija9.amiskoodari.fi"],  # Ensure only trusted origins are allowed
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allow_headers=["Content-Type", "Authorization"],
+    expose_headers=["X-all-posts-count"],
 )
 
 app.include_router(users_router, prefix="/api", tags=["users"])
