@@ -51,7 +51,7 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://guziiuchyk.github.io"],  # Allow only specific origin
+    allow_origins=["https://opiskelija9.amiskoodari.fi", "https://test.backendserviceforumapi.online"],  # Allow only specific origin
     allow_credentials=True,                          # Allow credentials (cookies, authorization headers, etc.)
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],  # Specify allowed HTTP methods
     allow_headers=["Content-Type", "Authorization"],  # Specify allowed headers
