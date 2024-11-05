@@ -82,7 +82,6 @@ async def get_current_user(
 
         # Call the refresh token view to get new tokens
         new_access_token, new_refresh_token = await refresh_token_view(refresh_token)
-        expires = datetime.utcnow() + timedelta(hours=1)  # Expires in 1 hour
 
         response.set_cookie(key="access_token", value=new_access_token, httponly=True, samesite="none", secure=True)
         response.set_cookie(key="refresh_token", value=new_refresh_token, httponly=True, samesite="none", secure=True)

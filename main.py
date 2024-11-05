@@ -49,7 +49,7 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  # Set this to your frontend's origin
+    allow_origins=["http://localhost:8080"],  # Set this to your frontend's origin
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],  # include additional methods as per the application demand
     allow_headers=["Content-Type", "Set-Cookie"],  # include additional headers as per the application demand
