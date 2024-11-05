@@ -51,7 +51,7 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://opiskelija9.amiskoodari.fi", "http://test.backendserviceforumapi.online"],  # Ensure only trusted origins are allowed
+    allow_origins=["https://opiskelija9.amiskoodari.fi", "https://test.backendserviceforumapi.online"],  # Ensure only trusted origins are allowed
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
