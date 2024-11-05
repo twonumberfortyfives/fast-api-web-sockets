@@ -50,7 +50,7 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://guziiuchyk.github.io/", "https://test.backendserviceforumapi.online"],
+    allow_origins=["https://guziiuchyk.github.io", "https://test.backendserviceforumapi.online"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
