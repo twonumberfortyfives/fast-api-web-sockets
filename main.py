@@ -48,13 +48,14 @@ origins = [
     "https://guziiuchyk.github.io/react-forum/*"
 ]
 
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
-    allow_credentials=True,
-    allow_methods=["*"],   # Allows all HTTP methods
-    allow_headers=["*"],   # Allows all headers
-    expose_headers=["X-all-posts-count"],  # Expose custom headers if needed
+    allow_origins=["https://guziiuchyk.github.io"],  # Allow only specific origin
+    allow_credentials=True,                          # Allow credentials (cookies, authorization headers, etc.)
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],  # Specify allowed HTTP methods
+    allow_headers=["Content-Type", "Authorization"],  # Specify allowed headers
+    expose_headers=["X-all-posts-count"],            # Expose custom headers if needed
 )
 
 app.include_router(users_router, prefix="/api", tags=["users"])
