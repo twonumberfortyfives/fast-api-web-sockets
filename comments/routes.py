@@ -13,7 +13,7 @@ router = APIRouter()
 
 @router.get(
     "/posts/{post_id}/all-comments",
-    dependencies=[Depends(RateLimiter(times=120, seconds=60))],
+    # dependencies=[Depends(RateLimiter(times=120, seconds=60))],
 )
 async def get_comments(
     post_id: int, db: AsyncSession = Depends(get_db)
@@ -23,7 +23,7 @@ async def get_comments(
 
 @router.delete(
     "/posts/{post_id}/all-comments/{comment_id}",
-    dependencies=[Depends(RateLimiter(times=120, seconds=60))],
+    # dependencies=[Depends(RateLimiter(times=120, seconds=60))],
 )
 async def delete_comment(
     post_id: int,
@@ -44,7 +44,7 @@ async def delete_comment(
 @router.patch(
     "/posts/{post_id}/all-comments/{comment_id}",
     response_model=serializers.CommentList,
-    dependencies=[Depends(RateLimiter(times=120, seconds=60))],
+    # dependencies=[Depends(RateLimiter(times=120, seconds=60))],
 )
 async def patch_comment(
     post_id: int,

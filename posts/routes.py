@@ -12,7 +12,10 @@ from fastapi_pagination import Page, paginate
 router = APIRouter()
 
 
-@router.get("/posts", dependencies=[Depends(RateLimiter(times=120, seconds=60))])
+@router.get(
+    "/posts",
+    # dependencies=[Depends(RateLimiter(times=120, seconds=60))]
+)
 async def get_all_posts(
     request: Request,
     response: Response,
@@ -23,7 +26,10 @@ async def get_all_posts(
     )
 
 
-@router.get("/posts/{post}", dependencies=[Depends(RateLimiter(times=120, seconds=60))])
+@router.get(
+    "/posts/{post}",
+    # dependencies=[Depends(RateLimiter(times=120, seconds=60))]
+)
 async def retrieve_post(
     post: Union[int, str],
     request: Request,
@@ -40,7 +46,7 @@ async def retrieve_post(
 @router.post(
     "/posts/{post_id}/like",
     response_model=serializers.Like,
-    dependencies=[Depends(RateLimiter(times=120, seconds=60))],
+    # dependencies=[Depends(RateLimiter(times=120, seconds=60))],
 )
 async def like_the_post(
     post_id: int,
@@ -54,7 +60,8 @@ async def like_the_post(
 
 
 @router.delete(
-    "/posts/{post_id}/like", dependencies=[Depends(RateLimiter(times=120, seconds=60))]
+    "/posts/{post_id}/like",
+    # dependencies=[Depends(RateLimiter(times=120, seconds=60))]
 )
 async def unlike_the_post(
     post_id: int,
@@ -70,7 +77,7 @@ async def unlike_the_post(
 @router.post(
     "/posts",
     response_model=serializers.Post,
-    dependencies=[Depends(RateLimiter(times=120, seconds=60))],
+    # dependencies=[Depends(RateLimiter(times=120, seconds=60))],
 )
 async def create_post(
     request: Request,
@@ -95,7 +102,7 @@ async def create_post(
 @router.patch(
     "/posts/{post_id}",
     response_model=serializers.PostPatch,
-    dependencies=[Depends(RateLimiter(times=120, seconds=60))],
+    # dependencies=[Depends(RateLimiter(times=120, seconds=60))],
 )
 async def edit_post(
     post_id: int,

@@ -69,10 +69,10 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 @app.on_event("startup")
 async def on_startup():
     await init_db()
-    redis_connection = redis.from_url(
-        "redis://redis", encoding="utf-8", decode_responses=True
-    )
-    await FastAPILimiter.init(redis_connection)
+    # redis_connection = redis.from_url(
+    #     "redis://redis", encoding="utf-8", decode_responses=True
+    # )
+    # await FastAPILimiter.init(redis_connection)
 
 
 class ConnectionManager:
