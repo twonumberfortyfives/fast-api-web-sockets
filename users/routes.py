@@ -64,7 +64,7 @@ async def retrieve_users_posts(
 
 
 @router.get(
-    "/my-profile",
+    "/my-profile/",
     response_model=serializers.UserMyProfile,
     # dependencies=[Depends(RateLimiter(times=120, seconds=60))],
 )

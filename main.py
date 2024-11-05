@@ -44,13 +44,12 @@ add_pagination(app)
 
 origins = [
     "https://test.backendserviceforumapi.online",
-    "https://guziiuchyk.github.io",
-    "https://guziiuchyk.github.io/react-forum/*"
+    "https://opiskelija9.amiskoodari.fi"
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://opiskelija9.amiskoodari.fi"],  # Set this to your frontend's origin
+    allow_origins=origins,  # Set this to your frontend's origin
     allow_credentials=True,  # This is crucial for requests with credentials
     allow_methods=["*"],  # Add other HTTP methods if needed
     allow_headers=["*"],
