@@ -49,7 +49,7 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://opiskelija9.amiskoodari.fi/", "https://test.backendserviceforumapi.online/"],  # Set this to your frontend's origin
+    allow_origins=origins,  # Set this to your frontend's origin
     allow_credentials=True,
     allow_methods=["*"],  # include additional methods as per the application demand
     allow_headers=["*"],  # include additional headers as per the application demand
