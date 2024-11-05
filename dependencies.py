@@ -83,8 +83,8 @@ async def get_current_user(
         # Call the refresh token view to get new tokens
         new_access_token, new_refresh_token = await refresh_token_view(refresh_token)
 
-        response.set_cookie(key="access_token", value=new_access_token, httponly=True, samesite=None)
-        response.set_cookie(key="refresh_token", value=new_refresh_token, httponly=True, samesite=None)
+        response.set_cookie(key="access_token", value=new_access_token, httponly=True, samesite="None", secure=True)
+        response.set_cookie(key="refresh_token", value=new_refresh_token, httponly=True, samesite="None", secure=True)
 
         # Changing the variable from try block. Putting there new refreshed access token!
         user_data = jwt.decode(
