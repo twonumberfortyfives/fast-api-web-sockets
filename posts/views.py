@@ -93,7 +93,9 @@ async def retrieve_post_view(
                 models.DBPost._tags.ilike(f"%{tag}%") for tag in without_hashtags
             ]
             result = await db.execute(
-                query.filter(or_(*conditions)).distinct().order_by(models.DBPost.id.desc())
+                query.filter(or_(*conditions))
+                .distinct()
+                .order_by(models.DBPost.id.desc())
             )
         else:
             result = await db.execute(
@@ -111,7 +113,9 @@ async def retrieve_post_view(
         current_user_id = (
             await get_current_user(request=request, response=response, db=db)
         ).id
-        return await get_posts_with_full_info(posts=posts, current_user_id=current_user_id)
+        return await get_posts_with_full_info(
+            posts=posts, current_user_id=current_user_id
+        )
     except HTTPException as e:
         if e.status_code == 401:
             return posts
@@ -307,19 +311,19 @@ async def fetch_data_news():
         response = await client.get(url)
         response.raise_for_status()
         result = response.json()
-    return [{
-        "topic": article["title"],
-        "content": article["description"],
-        "picture": (article["urlToImage"] if article["urlToImage"] else None),
-    }
+    return [
+        {
+            "topic": article["title"],
+            "content": article["description"],
+            "picture": (article["urlToImage"] if article["urlToImage"] else None),
+        }
         for article in result["articles"]
     ]
 
 
 async def create_posts_as_admin(db: AsyncSession):
     admin_query = await db.execute(
-        select(models.DBUser)
-        .filter(models.DBUser.username == "admin")
+        select(models.DBUser).filter(models.DBUser.username == "admin")
     )
     admin = admin_query.scalars().first()
 
@@ -341,16 +345,13 @@ async def create_posts_as_admin(db: AsyncSession):
             topic=news["topic"],
             content=news["content"],
             user_id=admin.id,
-            _tags="admin, coding, programming"
+            _tags="admin, coding, programming",
         )
         db.add(new_post)
         await db.commit()
         await db.refresh(new_post)
 
         if news["picture"]:
-            new_file_for_post = models.DBFile(
-                post_id=new_post.id,
-                link=news["picture"]
-            )
+            new_file_for_post = models.DBFile(post_id=new_post.id, link=news["picture"])
             db.add(new_file_for_post)
     await db.commit()

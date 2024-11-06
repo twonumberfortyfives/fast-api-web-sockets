@@ -232,7 +232,9 @@ async def my_profile_edit_view(
                 os.remove(old_image_full_path)
 
         # Store the URL for accessing the image
-        found_user.profile_picture = f"https://test.backendserviceforumapi.online/{image_path}"
+        found_user.profile_picture = (
+            f"https://test.backendserviceforumapi.online/{image_path}"
+        )
 
     # Commit changes to the database
     try:

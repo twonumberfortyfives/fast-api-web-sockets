@@ -10,9 +10,9 @@ load_dotenv()
 celery = Celery(
     __name__,
     broker=os.getenv("CELERY_BROKER_URL"),
-    backend=os.getenv("CELERY_RESULT_BACKEND")
+    backend=os.getenv("CELERY_RESULT_BACKEND"),
 )
-celery.conf.timezone = 'UTC'
+celery.conf.timezone = "UTC"
 
 
 @celery.task
@@ -31,7 +31,9 @@ def create_posts():
                 return {"message": "Posts have been published."}
             else:
                 print(f"Error: {response.status_code} - {response.text}")
-                raise HTTPException(status_code=response.status_code, detail="Error occurred.")
+                raise HTTPException(
+                    status_code=response.status_code, detail="Error occurred."
+                )
     except Exception as e:
         print(f"Exception in create_posts: {e}")
         raise e

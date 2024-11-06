@@ -44,7 +44,7 @@ add_pagination(app)
 
 origins = [
     "https://test.backendserviceforumapi.online",
-    "https://opiskelija9.amiskoodari.fi"
+    "https://opiskelija9.amiskoodari.fi",
 ]
 
 app.add_middleware(
@@ -361,6 +361,7 @@ async def websocket_chat(
             print(f"Unexpected error: {str(e)}")
             await websocket.close()
             break
+
 
 from celery_package.celery_tasks import print_message
 
