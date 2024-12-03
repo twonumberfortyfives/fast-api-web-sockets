@@ -88,14 +88,14 @@ async def get_current_user(
             value=new_access_token,
             httponly=True,
             samesite="none",
-            secure=True,
+            secure=False,
         )
         response.set_cookie(
             key="refresh_token",
             value=new_refresh_token,
             httponly=True,
             samesite="none",
-            secure=True,
+            secure=False
         )
 
         # Changing the variable from try block. Putting there new refreshed access token!

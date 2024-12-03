@@ -1,0 +1,4 @@
+[tool.creosote]
+venvs=[".venv"]
+paths=["."]
+deps-file="requirements.txt"

@@ -45,6 +45,10 @@ add_pagination(app)
 origins = [
     "https://test.backendserviceforumapi.online",
     "https://opiskelija9.amiskoodari.fi",
+    "http://localhost:5173",
+    "http://localhost:8000",
+    "http://frontend:5173",
+    "http://web:8000",
 ]
 
 app.add_middleware(

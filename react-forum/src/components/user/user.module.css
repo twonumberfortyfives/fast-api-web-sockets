@@ -1,0 +1,18 @@
+.wrapper{
+    background-color: var(--primary-color);
+    display: flex;
+    margin: 10px 0;
+    border-radius: 10px;
+    padding: 10px;
+    align-items: center;
+}
+.img{
+    border-radius: 50%;
+    width: 70px;
+    height: 70px;
+}
+
+.text{
+    font-size: 20px;
+    margin-left: 10px;
+}

@@ -1,0 +1,13 @@
+html,body{
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    font-family: Poppins, sans-serif;
+    color: var(--primary-font-color);
+    background-color: var(--secondary-color);
+}
+
+#root{
+    height: 100%;
+}

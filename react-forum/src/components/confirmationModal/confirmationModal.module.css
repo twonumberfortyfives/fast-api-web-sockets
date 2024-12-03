@@ -1,0 +1,45 @@
+.wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.content {
+    background-color: var(--primary-color);
+    padding: 50px;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.buttons {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.buttons button {
+    margin: 0 10px;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+.text{
+    font-weight: 700;
+    font-size: 22px;
+}
+
+.cancel{
+    background-color: var(--ui-elements-color);
+}
+
+.confirm{
+    background-color: red;
+}

@@ -136,14 +136,14 @@ async def login(user: serializers.UserLogin, db: AsyncSession = Depends(get_db))
         value=user_tokens.access_token,
         httponly=True,
         samesite="none",
-        secure=True,
+        secure=False,
     )
     response.set_cookie(
         key="refresh_token",
         value=user_tokens.refresh_token,
         httponly=True,
         samesite="none",
-        secure=True,
+        secure=False,
     )
 
     return response
