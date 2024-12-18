@@ -95,7 +95,7 @@ async def get_current_user(
             value=new_refresh_token,
             httponly=True,
             samesite="none",
-            secure=False
+            secure=False,
         )
 
         # Changing the variable from try block. Putting there new refreshed access token!

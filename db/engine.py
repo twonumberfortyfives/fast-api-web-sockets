@@ -10,10 +10,12 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 dotenv.load_dotenv()
 
 
-USE_MOCK_DB = os.getenv('USE_MOCK_DB')
+USE_MOCK_DB = os.getenv("USE_MOCK_DB")
 
 if USE_MOCK_DB == "true":
-    DATABASE_URL = os.getenv("MOCK_DATABASE_URL")  # change if connecting via IDE/docker container
+    DATABASE_URL = os.getenv(
+        "MOCK_DATABASE_URL"
+    )  # change if connecting via IDE/docker container
 else:
     DATABASE_URL = os.getenv("DATABASE_URL")
 

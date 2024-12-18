@@ -2,7 +2,13 @@ import time
 
 from selenium.webdriver.common.by import By
 
-from .conftest import register_user, assert_url, login_user, wait_for_element, delete_user
+from .conftest import (
+    register_user,
+    assert_url,
+    login_user,
+    wait_for_element,
+    delete_user,
+)
 from .const import MAIN_PAGE, LOGIN_PAGE, PROFILE_PAGE, REGISTER_PAGE
 
 

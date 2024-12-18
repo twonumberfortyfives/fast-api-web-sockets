@@ -2,7 +2,14 @@ import time
 
 from selenium.webdriver.common.by import By
 
-from .conftest import register_user, assert_url, login_user, wait_for_element, fill_input, delete_user
+from .conftest import (
+    register_user,
+    assert_url,
+    login_user,
+    wait_for_element,
+    fill_input,
+    delete_user,
+)
 from .const import MAIN_PAGE, LOGIN_PAGE, PROFILE_PAGE, REGISTER_PAGE
 
 
@@ -18,7 +25,6 @@ def test_private_chat_flow(driver, user_data, user2_data):
     register_user(driver, user_data)
 
     assert_url(driver=driver, expected_url=LOGIN_PAGE)
-
 
     link_to_register = wait_for_element(driver, By.CSS_SELECTOR, "a[href*='/register']")
     link_to_register.click()
@@ -38,7 +44,9 @@ def test_private_chat_flow(driver, user_data, user2_data):
 
     time.sleep(3)
 
-    admin_account = wait_for_element(driver, By.CSS_SELECTOR, "a[class='_wrapper_yc7q6_1'")
+    admin_account = wait_for_element(
+        driver, By.CSS_SELECTOR, "a[class='_wrapper_yc7q6_1'"
+    )
     admin_account.click()
 
     go_to_chat = wait_for_element(driver, By.CLASS_NAME, "_button_1fp5i_57")

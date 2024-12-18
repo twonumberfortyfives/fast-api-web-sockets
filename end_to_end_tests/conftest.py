@@ -4,6 +4,7 @@ import pytest
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
+
 # from sqlalchemy.ext.asyncio import create_async_engine
 # from sqlalchemy.orm import sessionmaker
 # from sqlalchemy.future import select
@@ -21,14 +22,20 @@ def driver():
     # Setting up Firefox options
     options = Options()
     options.headless = True  # Optional: run in headless mode
-    options.set_preference("network.cookie.sameSite.laxByDefault", False)  # Allow SameSite=None by default
-    options.set_preference("network.cookie.sameSite.noneRequiresSecure",False)  # Don't require "Secure" for SameSite=None cookies
-    options.set_preference("dom.ipc.processCount", 1)  # Optimize performance in Docker (important for headless mode)
+    options.set_preference(
+        "network.cookie.sameSite.laxByDefault", False
+    )  # Allow SameSite=None by default
+    options.set_preference(
+        "network.cookie.sameSite.noneRequiresSecure", False
+    )  # Don't require "Secure" for SameSite=None cookies
+    options.set_preference(
+        "dom.ipc.processCount", 1
+    )  # Optimize performance in Docker (important for headless mode)
     options.set_preference("privacy.cookieBehavior", 0)
 
     # Connect to Selenium server running in Docker container
     driver = webdriver.Remote(
-        command_executor='http://selenium:4444/wd/hub',  # Selenium server URL
+        command_executor="http://selenium:4444/wd/hub",  # Selenium server URL
         options=options,
         keep_alive=True,  # Optional: keep the connection alive for the session
     )
@@ -36,6 +43,7 @@ def driver():
     yield driver
 
     driver.quit()
+
 
 #
 # @pytest.fixture(scope="module")
@@ -59,7 +67,7 @@ def user_data():
     return {
         "username": "testuser",
         "email": "testuser@example.com",
-        "password": "TestPassword123!"
+        "password": "TestPassword123!",
     }
 
 
@@ -68,7 +76,7 @@ def user2_data():
     return {
         "username": "testuser2",
         "email": "testuser2@example.com",
-        "password": "TestPassword123!"
+        "password": "TestPassword123!",
     }
 
 
@@ -77,8 +85,9 @@ def post_data():
     return {
         "topic": "test_topic",
         "description": "test_description",
-        "tags": "test_tag"
+        "tags": "test_tag",
     }
+
 
 #
 # async def remove_user_by_username(db: AsyncSession, usernames: tuple) -> None:
@@ -105,9 +114,7 @@ def post_data():
 
 
 def wait_for_element(driver, by, value, timeout=10):
-    return WebDriverWait(driver, timeout).until(
-        EC.element_to_be_clickable((by, value))
-    )
+    return WebDriverWait(driver, timeout).until(EC.element_to_be_clickable((by, value)))
 
 
 def fill_input(driver, placeholder, value):
@@ -146,24 +153,28 @@ def login_user(driver, user_data):
 
 
 def delete_user(driver, user_data):
-    pop_up_button = wait_for_element(driver, By.CLASS_NAME, "_profile__pop_up_button_16yyf_297")
+    pop_up_button = wait_for_element(
+        driver, By.CLASS_NAME, "_profile__pop_up_button_16yyf_297"
+    )
     pop_up_button.click()
 
     settings = wait_for_element(driver, By.CSS_SELECTOR, "a[href*='/settings']")
     settings.click()
 
-    delete_button = wait_for_element(driver, By.CSS_SELECTOR, "a[href*='/delete-account']")
+    delete_button = wait_for_element(
+        driver, By.CSS_SELECTOR, "a[href*='/delete-account']"
+    )
     delete_button.click()
 
     input_field = WebDriverWait(driver, 10).until(
-        EC.visibility_of_element_located(
-            (By.CSS_SELECTOR, f"input[type='password']")
-        )
+        EC.visibility_of_element_located((By.CSS_SELECTOR, f"input[type='password']"))
     )
     input_field.clear()
     input_field.send_keys(user_data.get("password"))
 
-    pop_up_button = wait_for_element(driver, By.CLASS_NAME, "_profile__pop_up_button_16yyf_297")
+    pop_up_button = wait_for_element(
+        driver, By.CLASS_NAME, "_profile__pop_up_button_16yyf_297"
+    )
     pop_up_button.click()
 
     confirm_button = wait_for_element(driver, By.CLASS_NAME, "_button_1b9u1_51")
@@ -171,4 +182,3 @@ def delete_user(driver, user_data):
 
     again_confirm_button = wait_for_element(driver, By.CLASS_NAME, "_confirm_17jzi_85")
     again_confirm_button.click()
-

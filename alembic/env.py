@@ -10,6 +10,7 @@ from alembic import context
 from db.models import Base
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 database_url = os.getenv("USE_MOCK_DB")

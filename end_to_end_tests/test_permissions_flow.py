@@ -2,7 +2,13 @@ import time
 
 from selenium.webdriver.common.by import By
 
-from .conftest import register_user, login_user, wait_for_element, assert_url, delete_user
+from .conftest import (
+    register_user,
+    login_user,
+    wait_for_element,
+    assert_url,
+    delete_user,
+)
 from .const import MAIN_PAGE, LOGIN_PAGE, PROFILE_PAGE
 
 
@@ -33,7 +39,9 @@ def test_permissions_flow_basics(driver, user_data, post_data):
     topic = wait_for_element(driver, By.CLASS_NAME, "_textarea_7b4hy_47")
     topic.send_keys(post_data.get("topic"))
 
-    description = wait_for_element(driver, By.CLASS_NAME, "_textarea_7b4hy_47._description_7b4hy_75")
+    description = wait_for_element(
+        driver, By.CLASS_NAME, "_textarea_7b4hy_47._description_7b4hy_75"
+    )
     description.send_keys(post_data.get("description"))
 
     tags = wait_for_element(driver, By.CLASS_NAME, "_tags_7b4hy_85")
