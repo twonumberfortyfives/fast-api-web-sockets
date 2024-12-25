@@ -16,7 +16,6 @@ from fastapi import (
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi_limiter import FastAPILimiter
 from fastapi_pagination import add_pagination
 from fastapi.templating import Jinja2Templates
